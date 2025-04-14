@@ -447,6 +447,31 @@ func (d *DB) SearchEntries(query string) ([]models.SearchResult, error) {
 			return nil, err
 		}
 
+		// Create Entry object with available data
+		entry := models.Entry{
+			ID:          result.EntryID,
+			Title:       result.Title,
+			Description: result.Description,
+			Fields:      fields,
+			Tags:        []string{},
+		}
+
+		// Extract content from fields
+		if content, ok := fields["content"]; ok {
+			entry.Content = content
+		} else {
+			entry.Content = result.Description
+		}
+
+		// Extract tags from fields
+		if tagStr, ok := fields["tags"]; ok && tagStr != "" {
+			for _, tag := range strings.Split(tagStr, ",") {
+				entry.Tags = append(entry.Tags, strings.TrimSpace(tag))
+			}
+		}
+
+		result.Entry = entry
+
 		query = strings.ToLower(query)
 		for name, value := range fields {
 			if strings.Contains(strings.ToLower(value), query) {

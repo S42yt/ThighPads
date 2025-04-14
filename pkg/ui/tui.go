@@ -777,11 +777,6 @@ func (t *TUI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case ScreenConfirm:
-		s.WriteString(t.theme.BoxStyle.Render(
-			t.confirmMsg + "\n\n" +
-				t.theme.InfoText.Render("Press Y to confirm or N to cancel"),
-		))
-
 		if msg, ok := msg.(tea.KeyMsg); ok {
 			switch {
 			case key.Matches(msg, keys.Confirm):

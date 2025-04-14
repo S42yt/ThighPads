@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
-    "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/s42yt/thighpads/pkg/models"
 )
@@ -164,7 +164,6 @@ func (d CustomItemDelegate) Spacing() int {
 func (d CustomItemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
 	var cmd tea.Cmd
 	return cmd
-
 }
 
 func (d CustomItemDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
@@ -180,11 +179,11 @@ func (d CustomItemDelegate) Render(w io.Writer, m list.Model, index int, item li
 
 	var titleStyle, descStyle lipgloss.Style
 	if index == m.Index() {
-		titleStyle = d.theme.SelectedItem.Copy().Width(w)
-		descStyle = d.theme.SelectedItem.Copy().Width(w)
+		titleStyle = d.theme.SelectedItem.Copy().Width(m.Width())
+		descStyle = d.theme.SelectedItem.Copy().Width(m.Width())
 	} else {
-		titleStyle = d.theme.ListItem.Copy().Width(w)
-		descStyle = d.theme.ListItem.Copy().Width(w)
+		titleStyle = d.theme.ListItem.Copy().Width(m.Width())
+		descStyle = d.theme.ListItem.Copy().Width(m.Width())
 	}
 
 	metaTextStyle := d.theme.InfoText
@@ -192,14 +191,19 @@ func (d CustomItemDelegate) Render(w io.Writer, m list.Model, index int, item li
 	if metaText != "" {
 		titleWidth := lipgloss.Width(title)
 		metaWidth := lipgloss.Width(metaText)
+
+		// Only show meta text if there's enough space
+		if titleWidth+metaWidth+2 < m.Width() {
+			titleLine := titleStyle.Render(title)
+			metaLine := metaTextStyle.Render(metaText)
+			padding := m.Width() - titleWidth - metaWidth
+			titleLine = titleLine + strings.Repeat(" ", padding) + metaLine
+			_, _ = fmt.Fprint(w, titleLine+"\n"+descStyle.Render(desc))
+			return
 		}
 	}
 
-	 _ = fmt.Fprint(w, titleStyle.Render(title)+"\n"+descStyle.Render(desc))
-}
-	}
-
-	return titleStyle.Render(title) + "\n" + descStyle.Render(desc)
+	_, _ = fmt.Fprint(w, titleStyle.Render(title)+"\n"+descStyle.Render(desc))
 }
 
 type (

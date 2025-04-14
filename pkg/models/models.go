@@ -18,17 +18,15 @@ type Entry struct {
 	UpdatedAt   string            `json:"updated_at"`
 }
 
-
 type Table struct {
 	ID        string           `json:"id"`
 	Name      string           `json:"name"`
 	Author    string           `json:"author"`
-	Entries   map[string]Entry `json:"entries"` 
+	Entries   map[string]Entry `json:"entries"`
 	CreatedAt string           `json:"created_at"`
 	UpdatedAt string           `json:"updated_at"`
-	Path      string           `json:"-"` 
+	Path      string           `json:"-"`
 }
-
 
 type SearchResult struct {
 	EntryID       string `json:"entry_id"`
@@ -37,8 +35,8 @@ type SearchResult struct {
 	Description   string `json:"description,omitempty"`
 	Context       string `json:"context,omitempty"`
 	MatchingField string `json:"matching_field,omitempty"`
+	Entry         Entry  `json:"-"` 
 }
-
 
 func NewTable(name, author string) *Table {
 	now := time.Now().Format(time.RFC3339)
@@ -51,7 +49,6 @@ func NewTable(name, author string) *Table {
 		UpdatedAt: now,
 	}
 }
-
 
 func (t *Table) AddEntry(entry Entry) {
 	now := time.Now().Format(time.RFC3339)
@@ -66,7 +63,6 @@ func (t *Table) AddEntry(entry Entry) {
 	t.UpdatedAt = now
 }
 
-
 func (t *Table) RemoveEntry(id string) bool {
 	if _, exists := t.Entries[id]; exists {
 		delete(t.Entries, id)
@@ -76,17 +72,15 @@ func (t *Table) RemoveEntry(id string) bool {
 	return false
 }
 
-
 func (t *Table) GetEntry(id string) (Entry, bool) {
 	entry, ok := t.Entries[id]
 	return entry, ok
 }
 
-
 func (t *Table) UpdateEntry(id string, updatedEntry Entry) bool {
 	if _, exists := t.Entries[id]; exists {
-		updatedEntry.ID = id                             
-		updatedEntry.CreatedAt = t.Entries[id].CreatedAt 
+		updatedEntry.ID = id
+		updatedEntry.CreatedAt = t.Entries[id].CreatedAt
 		updatedEntry.UpdatedAt = time.Now().Format(time.RFC3339)
 		t.Entries[id] = updatedEntry
 		t.UpdatedAt = updatedEntry.UpdatedAt
@@ -95,7 +89,6 @@ func (t *Table) UpdateEntry(id string, updatedEntry Entry) bool {
 	return false
 }
 
-
 func (t *Table) GetEntrySlice() []Entry {
 	entries := make([]Entry, 0, len(t.Entries))
 	for _, entry := range t.Entries {
@@ -103,7 +96,6 @@ func (t *Table) GetEntrySlice() []Entry {
 	}
 	return entries
 }
-
 
 func (t *Table) Save() error {
 	if t.Path == "" {
@@ -116,7 +108,6 @@ func (t *Table) Save() error {
 	return os.WriteFile(t.Path, data, 0644)
 }
 
-
 func LoadTable(path string) (*Table, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -128,12 +119,10 @@ func LoadTable(path string) (*Table, error) {
 		return nil, err
 	}
 
-	
 	if table.Entries == nil {
 		table.Entries = make(map[string]Entry)
 	}
 
-	
 	if table.ID == "" {
 		table.ID = GenerateID()
 	}
@@ -141,7 +130,6 @@ func LoadTable(path string) (*Table, error) {
 	table.Path = path
 	return &table, nil
 }
-
 
 func GenerateID() string {
 	return time.Now().Format("20060102150405.000")
