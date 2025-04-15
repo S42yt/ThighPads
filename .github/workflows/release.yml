@@ -1,0 +1,100 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.1'
+
+      - name: Get latest tag
+        id: get_latest_tag
+        run: |
+          latest_tag=$(git tag -l 'v*' | sort -V | tail -n1)
+          if [ -z "$latest_tag" ]; then
+            echo "version=v1.0.0" >> $GITHUB_OUTPUT
+          else
+            current_version=$(echo $latest_tag | sed 's/v//')
+            major=$(echo $current_version | cut -d. -f1)
+            minor=$(echo $current_version | cut -d. -f2)
+            
+            if [[ $current_version == *"."*"."* ]]; then
+              patch=$(echo $current_version | cut -d. -f3)
+              new_patch=$((patch + 1))
+              echo "version=v$major.$minor.$new_patch" >> $GITHUB_OUTPUT
+            else
+              echo "version=v$major.$minor.0" >> $GITHUB_OUTPUT
+            fi
+          fi
+          echo "New version will be: ${{ steps.get_latest_tag.outputs.version }}"
+
+      - name: Update version in code
+        run: |
+          version_without_v=$(echo "${{ steps.get_latest_tag.outputs.version }}" | sed 's/v//')
+          sed -i 's/appVersion        = ".*"/appVersion        = "'$version_without_v'"/g' cmd/thighpads/main.go
+
+      - name: Build Windows binary
+        run: |
+          GOOS=windows GOARCH=amd64 go build -v -o thighpads_${{ steps.get_latest_tag.outputs.version }}_windows_amd64.exe ./cmd/thighpads
+
+      - name: Build macOS binary
+        run: |
+          GOOS=darwin GOARCH=amd64 go build -v -o thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64.exe ./cmd/thighpads
+          tar -czf thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64.tar.gz thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64.exe
+          
+      - name: Build Linux binary
+        run: |
+          GOOS=linux GOARCH=amd64 go build -v -o thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64.exe ./cmd/thighpads
+          tar -czf thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64.tar.gz thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64.exe
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_latest_tag.outputs.version }}
+          name: Release ${{ steps.get_latest_tag.outputs.version }}
+          draft: false
+          generate_release_notes: true
+          body: |
+            # ThighPads ${{ steps.get_latest_tag.outputs.version }}
+            
+            ## Installation
+            
+            ### Windows
+            Download the .exe file and run it once. It will automatically install globally.
+            
+            ### macOS/Linux
+            1. Download the .tar.gz file (contains the .exe file)
+            2. Extract it with `tar -xzf thighpads_*_*.tar.gz`
+            3. Run the extracted executable once to install globally
+            
+            ## Changes in this version:
+            
+            - Automatic global installation on first run
+            - Improved update mechanism
+            - Standardized .exe file format across all platforms
+            
+          files: |
+            thighpads_${{ steps.get_latest_tag.outputs.version }}_windows_amd64.exe
+            thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64.tar.gz
+            thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64.tar.gz
+            thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64.exe
+            thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

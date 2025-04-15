@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	ConfigFolderName       = ".config/thighpads"
-	ConfigFileName         = "config.json"
-	DBFileName             = "thighpads.db"
-	ExportFolderName       = "exports"
-	ExportsConfigFileName  = "exports_config.json"
+	ConfigFolderName      = ".config/thighpads"
+	ConfigFileName        = "config.json"
+	DBFileName            = "thighpads.db"
+	ExportFolderName      = "exports"
+	ExportsConfigFileName = "exports_config.json"
 )
 
 type ExportsConfig struct {
@@ -122,42 +122,39 @@ func IsFirstRun() (bool, error) {
 }
 
 func GetDesktopExportPath() (string, error) {
-	
+
 	configPath, err := GetConfigPath()
 	if err != nil {
 		return "", err
 	}
-	
+
 	exportsConfigFile := filepath.Join(configPath, ExportsConfigFileName)
 	if _, err := os.Stat(exportsConfigFile); err == nil {
 		data, err := os.ReadFile(exportsConfigFile)
 		if err == nil {
 			var exportsConfig ExportsConfig
 			if err := json.Unmarshal(data, &exportsConfig); err == nil && exportsConfig.DesktopPath != "" {
-				
+
 				if _, err := os.Stat(exportsConfig.DesktopPath); err == nil {
 					return exportsConfig.DesktopPath, nil
 				}
 			}
 		}
 	}
-	
-	
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	
-	
+
 	desktopDir := filepath.Join(homeDir, "Desktop")
 	desktopExportsDir := filepath.Join(desktopDir, "ThighPads Exports")
-	
-	
+
 	if _, err := os.Stat(desktopExportsDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(desktopExportsDir, 0755); err != nil {
 			return "", err
 		}
 	}
-	
+
 	return desktopExportsDir, nil
 }
