@@ -105,6 +105,7 @@ Options:
   --wipe           Wipe all ThighPads data and start fresh
   --install        Force global installation
   --skip-install   Skip global installation
+  --uninstall      Uninstall ThighPads from your system
 ```
 
 ## Export Formats

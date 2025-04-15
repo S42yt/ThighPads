@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	appVersion        = "1.0.0"
+	appVersion        = "1.0.2"
 	releasesURL       = "https://api.github.com/repos/s42yt/thighpads/releases/latest"
 	updateCheckPeriod = 7 * 24 * time.Hour
 )
@@ -70,20 +70,11 @@ func checkForUpdates(forceCheck bool) (bool, string, string, error) {
 		return false, "", "", nil
 	}
 
+	downloadFileName := fmt.Sprintf("thighpads_%s.exe", release.TagName)
 	var downloadURL string
-	assetName := fmt.Sprintf("thighpads_%s_%s_%s", latestVersion, runtime.GOOS, runtime.GOARCH)
-
-	switch runtime.GOOS {
-	case "windows":
-		assetName += ".exe"
-	case "darwin":
-		assetName += ".tar.gz"
-	case "linux":
-		assetName += ".tar.gz"
-	}
 
 	for _, asset := range release.Assets {
-		if asset.Name == assetName {
+		if asset.Name == downloadFileName {
 			downloadURL = asset.BrowserDownloadURL
 			break
 		}
@@ -154,57 +145,12 @@ func updateThighPads(downloadURL string) error {
 
 	tempFile.Close()
 
-	if strings.HasSuffix(downloadURL, ".tar.gz") {
+	currentExe, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get current executable path: %w", err)
+	}
 
-		extractDir, err := os.MkdirTemp("", "thighpads_extract_*")
-		if err != nil {
-			return fmt.Errorf("failed to create extraction directory: %w", err)
-		}
-		defer os.RemoveAll(extractDir)
-
-		cmd := exec.Command("tar", "-xzf", tempFile.Name(), "-C", extractDir)
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("failed to extract update: %w", err)
-		}
-
-		var executable string
-		err = filepath.Walk(extractDir, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if !info.IsDir() && (info.Name() == "thighpads" || info.Name() == "thighpads.exe") {
-				executable = path
-				return filepath.SkipDir
-			}
-			return nil
-		})
-
-		if executable == "" {
-			return fmt.Errorf("executable not found in update package")
-		}
-
-		if err := os.Chmod(executable, 0755); err != nil {
-			return fmt.Errorf("failed to make executable: %w", err)
-		}
-
-		currentExe, err := os.Executable()
-		if err != nil {
-			return fmt.Errorf("failed to get current executable path: %w", err)
-		}
-
-		input, err := os.ReadFile(executable)
-		if err != nil {
-			return fmt.Errorf("failed to read new executable: %w", err)
-		}
-
-		return os.WriteFile(currentExe, input, 0755)
-	} else {
-
-		currentExe, err := os.Executable()
-		if err != nil {
-			return fmt.Errorf("failed to get current executable path: %w", err)
-		}
-
+	if runtime.GOOS == "windows" {
 		updaterBat := filepath.Join(os.TempDir(), "thighpads_updater.bat")
 		batContent := fmt.Sprintf(
 			`@echo off
@@ -223,11 +169,20 @@ exit
 		if err := cmd.Start(); err != nil {
 			return fmt.Errorf("failed to start updater: %w", err)
 		}
+	} else {
+		input, err := os.ReadFile(tempFile.Name())
+		if err != nil {
+			return fmt.Errorf("failed to read new executable: %w", err)
+		}
 
-		fmt.Println("Update will be applied when ThighPads restarts.")
-		os.Exit(0)
-		return nil
+		if err := os.WriteFile(currentExe, input, 0755); err != nil {
+			return fmt.Errorf("failed to update executable: %w", err)
+		}
 	}
+
+	fmt.Println("Update will be applied when ThighPads restarts.")
+	os.Exit(0)
+	return nil
 }
 
 func version() error {
@@ -363,14 +318,100 @@ func installUnixGlobal() error {
 	return nil
 }
 
+func uninstallGlobal() error {
+	switch runtime.GOOS {
+	case "windows":
+		return uninstallWindowsGlobal()
+	case "darwin", "linux":
+		return uninstallUnixGlobal()
+	default:
+		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+	}
+}
+
+func uninstallWindowsGlobal() error {
+	userProfile := os.Getenv("USERPROFILE")
+	if userProfile == "" {
+		return fmt.Errorf("USERPROFILE environment variable not set")
+	}
+
+	destDir := filepath.Join(userProfile, "AppData", "Local", "Programs", "ThighPads")
+	destPath := filepath.Join(destDir, "thighpads.exe")
+
+	
+	if _, err := os.Stat(destPath); os.IsNotExist(err) {
+		return fmt.Errorf("ThighPads is not installed globally")
+	}
+
+	
+	if err := os.RemoveAll(destDir); err != nil {
+		return fmt.Errorf("failed to remove installation directory: %w", err)
+	}
+
+	
+	cmd := exec.Command("powershell", "-Command",
+		fmt.Sprintf(`[Environment]::SetEnvironmentVariable("PATH", ($env:PATH -replace [regex]::Escape(";%s"), ""), [EnvironmentVariableTarget]::User)`, destDir))
+	_ = cmd.Run() 
+
+	fmt.Println("ThighPads has been uninstalled successfully.")
+	fmt.Println("You may need to restart your terminal for PATH changes to take effect.")
+	return nil
+}
+
+func uninstallUnixGlobal() error {
+	
+	possibleLocations := []string{
+		"/usr/local/bin/thighpads",
+		"/usr/bin/thighpads",
+	}
+
+	
+	homeDir, err := os.UserHomeDir()
+	if err == nil {
+		possibleLocations = append(possibleLocations,
+			filepath.Join(homeDir, "bin", "thighpads"),
+			filepath.Join(homeDir, ".local", "bin", "thighpads"))
+	}
+
+	uninstalled := false
+	for _, location := range possibleLocations {
+		if _, err := os.Stat(location); err == nil {
+			if err := os.Remove(location); err != nil {
+				fmt.Printf("Failed to remove %s: %v\n", location, err)
+			} else {
+				fmt.Printf("Removed %s\n", location)
+				uninstalled = true
+			}
+		}
+	}
+
+	if !uninstalled {
+		return fmt.Errorf("ThighPads is not installed globally or couldn't be found")
+	}
+
+	fmt.Println("ThighPads has been uninstalled successfully.")
+	return nil
+}
+
 func main() {
 	wipe := flag.Bool("wipe", false, "Wipe all ThighPads data and start fresh")
 	showVersion := flag.Bool("version", false, "Show version information")
 	skipInstall := flag.Bool("skip-install", false, "Skip global installation")
 	forceInstall := flag.Bool("install", false, "Force global installation")
+	uninstall := flag.Bool("uninstall", false, "Uninstall ThighPads from your system")
 	checkUpdate := flag.Bool("check-update", false, "Check for updates")
 	update := flag.Bool("update", false, "Update ThighPads to the latest version")
 	flag.Parse()
+
+	
+	if *uninstall {
+		fmt.Println("Uninstalling ThighPads...")
+		if err := uninstallGlobal(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to uninstall: %v\n", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
 
 	if *wipe {
 		redBlink := "\033[5;31m"
