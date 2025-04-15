@@ -2,7 +2,7 @@
 
 ThighPads is a simple yet powerful terminal-based note-taking application built with Go. Organize your notes into tables and entries with a clean, responsive Terminal UI.
 
-![ThighPads Screenshot]()
+![ThighPads Screenshot](https://github.com/S42yt/assets/blob/master/assets/thighpads/thighpads.png)
 
 ## Warning: Under Development
 
