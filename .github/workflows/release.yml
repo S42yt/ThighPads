@@ -54,16 +54,6 @@ jobs:
         run: |
           GOOS=windows GOARCH=amd64 go build -v -o thighpads_${{ steps.get_latest_tag.outputs.version }}_windows_amd64.exe ./cmd/thighpads
 
-      - name: Build macOS binary
-        run: |
-          GOOS=darwin GOARCH=amd64 go build -v -o thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64.exe ./cmd/thighpads
-          tar -czf thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64.tar.gz thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64.exe
-          
-      - name: Build Linux binary
-        run: |
-          GOOS=linux GOARCH=amd64 go build -v -o thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64.exe ./cmd/thighpads
-          tar -czf thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64.tar.gz thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64.exe
-
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -85,10 +75,6 @@ jobs:
             ## CONTRIBUTERS:
             -
           files: |
-            thighpads_${{ steps.get_latest_tag.outputs.version }}_windows_amd64.exe
-            thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64.tar.gz
-            thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64.tar.gz
-            thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64.exe
-            thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64.exe
+            thighpads_${{ steps.get_latest_tag.outputs.version }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
