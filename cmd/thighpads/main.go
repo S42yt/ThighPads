@@ -373,12 +373,26 @@ func main() {
 	flag.Parse()
 
 	if *wipe {
-		fmt.Println("Wiping all ThighPads data...")
-		if err := wipeData(); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to wipe data: %v\n", err)
-			os.Exit(1)
+		redBlink := "\033[5;31m"
+		reset := "\033[0m"
+
+		fmt.Printf("%sWARNING: You are about to delete all ThighPads data!%s\n", redBlink, reset)
+		fmt.Print("This will permanently erase all your tables and entries. Continue? (y/N): ")
+
+		var response string
+		fmt.Scanln(&response)
+
+		if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" {
+			fmt.Println("Wiping all ThighPads data...")
+			if err := wipeData(); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to wipe data: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("All data wiped. Starting fresh.")
+		} else {
+			fmt.Println("Wipe operation cancelled.")
+			os.Exit(0)
 		}
-		fmt.Println("All data wiped. Starting fresh.")
 	}
 
 	if *showVersion {
