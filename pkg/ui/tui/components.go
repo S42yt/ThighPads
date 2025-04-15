@@ -33,9 +33,9 @@ func (d ItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 		return
 	}
 
-	width := m.Width() - 4 
+	width := m.Width() - 4
 	if width < 10 {
-		width = 10 
+		width = 10
 	}
 
 	var title, desc string
@@ -49,7 +49,6 @@ func (d ItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 	fmt.Fprintf(w, "%s\n%s", title, desc)
 }
-
 
 func truncateString(s string, max int) string {
 	if max <= 3 {
@@ -81,12 +80,10 @@ func SelectableList(title string, items []list.Item, width, height int) list.Mod
 	l.Styles.FilterPrompt = Subtitle
 	l.Styles.FilterCursor = Subtitle
 
-	
 	l.SetShowHelp(false)
 	l.SetShowPagination(true)
 	l.Styles.PaginationStyle = Subtle
 
-	
 	l.Styles.HelpStyle = Subtle
 
 	return l
@@ -116,7 +113,7 @@ func SuccessView(message string) string {
 
 func CenterView(content string, width int) string {
 	if width < 10 {
-		width = 10 
+		width = 10
 	}
 	return lipgloss.Place(width, 1, lipgloss.Center, lipgloss.Center, content)
 }

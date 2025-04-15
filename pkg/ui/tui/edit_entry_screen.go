@@ -53,7 +53,6 @@ func (a *App) updateEditEntryScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEsc:
 			a.screen = ViewEntryScreen
 
-			
 			a.entryViewport.SetContent(a.currentEntry.Content)
 			a.entryViewport.GotoTop()
 			return a, nil
@@ -62,7 +61,6 @@ func (a *App) updateEditEntryScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	
 	if a.entryTitleInput.Focused() {
 		a.entryTitleInput, cmd = a.entryTitleInput.Update(msg)
 	} else if a.entryTagsInput.Focused() {
@@ -78,7 +76,7 @@ func (a *App) viewEditEntryScreen() string {
 	title := Title.Copy().Width(a.width - 4).Render("Edit Entry")
 	subtitle := Subtitle.Copy().Width(a.width - 4).Render(a.currentTable.Name)
 
-	availWidth := a.width - 6 
+	availWidth := a.width - 6
 
 	titleInput := Subtitle.Render("Title:") + "\n" + a.entryTitleInput.View()
 	tagsInput := Subtitle.Render("Tags:") + "\n" + a.entryTagsInput.View()

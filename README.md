@@ -30,6 +30,38 @@ The application will automatically offer to install as a global command on first
 thighpads --install
 ```
 
+### Unix/Linux Installation
+
+#### Method 1: Binary Installation
+
+```bash
+# Download the latest release
+curl -L https://github.com/s42yt/thighpads/releases/latest/download/thighpads-linux-amd64 -o thighpads
+
+# Make executable
+chmod +x thighpads
+
+# Move to a directory in your PATH
+sudo mv thighpads /usr/local/bin/
+```
+
+#### Method 2: Building from Source
+
+```bash
+# Install Go if needed (for Debian/Ubuntu)
+# sudo apt install golang-go
+
+# Clone repository
+git clone https://github.com/s42yt/thighpads.git
+
+# Build
+cd thighpads
+go build -o thighpads ./cmd/thighpads
+
+# Install (optional)
+sudo cp thighpads /usr/local/bin/
+```
+
 ### Manual Installation
 
 If you have Go installed, you can build from source:
@@ -93,6 +125,28 @@ ThighPads stores all configuration and data in:
 - Windows: `%USERPROFILE%\.config\thighpads\`
 - macOS/Linux: `~/.config/thighpads/`
 
+### Unix/Linux Configuration
+
+On Unix-like systems, ThighPads follows standard directory structures:
+
+```
+~/.config/thighpads/
+├── config.json      # Configuration
+├── tables/          # Tables directory
+│   ├── table1.json
+│   └── table2.json
+└── updates/         # Update cache
+```
+
+#### User Permissions
+
+For proper security on Unix systems:
+
+```bash
+mkdir -p ~/.config/thighpads
+chmod 700 ~/.config/thighpads
+```
+
 ### Command Line Options
 
 ```
@@ -107,6 +161,59 @@ Options:
   --skip-install   Skip global installation
   --uninstall      Uninstall ThighPads from your system
 ```
+
+## Unix-specific Features
+
+### Terminal Integration
+
+ThighPads works with standard terminal multiplexers:
+
+```bash
+# With tmux
+tmux new-session thighpads
+
+# With screen
+screen thighpads
+```
+
+### Pipe Support
+
+Import data from other commands:
+
+```bash
+cat data.txt | thighpads --import
+```
+
+### Shell Aliases and Functions
+
+Add these to your `.bashrc` or `.zshrc`:
+
+```bash
+# Quick launch
+alias tp="thighpads"
+
+# Quick export to current directory
+alias tpexp="thighpads --export-here"
+
+# Quick note function
+note() {
+  thighpads --quick-note "$@"
+}
+```
+
+## Security Considerations for Unix Systems
+
+- All data is stored unencrypted by default
+- For sensitive information, consider using filesystem encryption
+- Regularly backup your `~/.config/thighpads` directory
+
+## Troubleshooting on Unix Systems
+
+Common Unix-specific issues:
+
+- **Display issues**: Check that your terminal supports Unicode and true color
+- **Permission errors**: Verify file permissions on `~/.config/thighpads`
+- **Update failures**: Check network connectivity and proxy settings
 
 ## Export Formats
 

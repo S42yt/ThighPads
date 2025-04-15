@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	appVersion        = "1.0.5"
+	appVersion        = "1.0.6"
 	releasesURL       = "https://api.github.com/repos/s42yt/thighpads/releases/latest"
 	updateCheckPeriod = 7 * 24 * time.Hour
 )

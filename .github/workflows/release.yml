@@ -99,11 +99,6 @@ jobs:
             ## CONTRIBUTORS:
             -
           files: |
-            thighpads_windows_amd64.exe
-            thighpads_darwin_amd64
-            thighpads_darwin_arm64
-            thighpads_linux_amd64
-            thighpads_linux_arm64
             thighpads_${{ steps.get_latest_tag.outputs.version }}_windows_amd64.exe
             thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64
             thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_arm64

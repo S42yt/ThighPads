@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/atotto/clipboard"
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -18,8 +19,11 @@ func (a *App) updateViewEntryScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.screen = EditEntryScreen
 			a.entryTitleInput = TextInputField(a.currentEntry.Title)
 			a.entryTagsInput = TextInputField(a.currentEntry.Tags)
+
+			a.entryContent = textarea.New()
+			a.entryContent.Placeholder = "Enter your content here..."
 			a.entryContent.SetValue(a.currentEntry.Content)
-			a.entryContent.SetWidth(a.width - 6) 
+			a.entryContent.SetWidth(a.width - 6)
 			a.entryContent.SetHeight(a.height - 20)
 			a.entryContent.Focus()
 			return a, nil
@@ -39,13 +43,12 @@ func (a *App) updateViewEntryScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	
 	a.entryViewport, cmd = a.entryViewport.Update(msg)
 	return a, cmd
 }
 
 func (a *App) viewViewEntryScreen() string {
-	
+
 	a.entryViewport = viewport.New(a.width-6, a.height-16)
 	a.entryViewport.SetContent(a.currentEntry.Content)
 

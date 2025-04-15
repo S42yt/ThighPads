@@ -20,7 +20,7 @@ func (a *App) updateTableScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.entryTagsInput = TextInputField("Enter tags (comma-separated)")
 			a.entryContent = textarea.New()
 			a.entryContent.Placeholder = "Enter your content here..."
-			a.entryContent.SetWidth(a.width - 6) 
+			a.entryContent.SetWidth(a.width - 6)
 			a.entryContent.SetHeight(a.height - 20)
 			a.entryContent.Focus()
 			return a, nil
@@ -37,7 +37,7 @@ func (a *App) updateTableScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(a.entries) > 0 {
 				selected, ok := a.list.SelectedItem().(Selectable)
 				if ok {
-					
+
 					if a.errorMsg == "confirm_delete" {
 						err := database.DeleteEntry(selected.ID)
 						if err != nil {
@@ -65,7 +65,6 @@ func (a *App) updateTableScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 						if entry.ID == selected.ID {
 							a.currentEntry = entry
 
-							
 							a.entryViewport.Width = a.width - 6
 							a.entryViewport.Height = a.height - 16
 							a.entryViewport.SetContent(entry.Content)
@@ -98,17 +97,16 @@ func (a *App) viewTableScreen() string {
 		content = BoxStyle.Copy().Width(a.width - 4).Render(
 			Normal.Render("This table is empty. Press 'n' to create your first entry."))
 	} else {
-		
-		a.list.SetWidth(a.width - 6) 
+
+		a.list.SetWidth(a.width - 6)
 		a.list.SetHeight(a.height - 12)
 		content = BoxStyle.Copy().Width(a.width - 4).Render(a.list.View())
 	}
 
-	
 	if a.errorMsg == "confirm_delete" {
 		warningBox := Warning.Copy().Width(a.width - 6).Render("Press 'd' again to confirm deletion")
 		content = warningBox + "\n\n" + content
-		a.errorMsg = "confirm_delete" 
+		a.errorMsg = "confirm_delete"
 	}
 
 	help := HelpView(map[string]string{

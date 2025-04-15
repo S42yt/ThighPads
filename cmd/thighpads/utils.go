@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/s42yt/thighpads/pkg/config"
 )
@@ -26,6 +27,8 @@ func isFirstRun() bool {
 	if err != nil {
 		return true
 	}
-	_, err = os.Stat(configPath)
+
+	configFile := filepath.Join(configPath, "config.json")
+	_, err = os.Stat(configFile)
 	return os.IsNotExist(err)
 }
