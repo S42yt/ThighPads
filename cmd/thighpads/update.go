@@ -50,18 +50,38 @@ func checkForUpdates(forceCheck bool) (bool, string, string, error) {
 		return false, "", "", nil
 	}
 
-	downloadFileName := fmt.Sprintf("thighpads_%s.exe", release.TagName)
+	osName := runtime.GOOS
+	arch := runtime.GOARCH
+
+	var assetPattern string
+	if osName == "windows" {
+		assetPattern = fmt.Sprintf("thighpads_%s_%s.exe", osName, arch)
+	} else {
+		assetPattern = fmt.Sprintf("thighpads_%s_%s", osName, arch)
+	}
+
 	var downloadURL string
 
+	versionedPattern := strings.Replace(assetPattern, "thighpads", fmt.Sprintf("thighpads_%s", release.TagName), 1)
+
 	for _, asset := range release.Assets {
-		if asset.Name == downloadFileName {
+		if asset.Name == versionedPattern {
 			downloadURL = asset.BrowserDownloadURL
 			break
 		}
 	}
 
 	if downloadURL == "" {
-		return false, "", "", fmt.Errorf("no suitable download found for your platform")
+		for _, asset := range release.Assets {
+			if asset.Name == assetPattern {
+				downloadURL = asset.BrowserDownloadURL
+				break
+			}
+		}
+	}
+
+	if downloadURL == "" {
+		return false, "", "", fmt.Errorf("no suitable download found for your platform (%s/%s)", osName, arch)
 	}
 
 	return true, latestVersion, downloadURL, nil
@@ -130,7 +150,9 @@ func updateThighPads(downloadURL string) error {
 		return fmt.Errorf("failed to get current executable path: %w", err)
 	}
 
-	if runtime.GOOS == "windows" {
+	switch runtime.GOOS {
+	case "windows":
+
 		updaterBat := filepath.Join(os.TempDir(), "thighpads_updater.bat")
 		batContent := fmt.Sprintf(
 			`@echo off
@@ -149,15 +171,32 @@ exit
 		if err := cmd.Start(); err != nil {
 			return fmt.Errorf("failed to start updater: %w", err)
 		}
-	} else {
-		input, err := os.ReadFile(tempFile.Name())
-		if err != nil {
-			return fmt.Errorf("failed to read new executable: %w", err)
+	case "darwin", "linux":
+
+		if err := os.Chmod(tempFile.Name(), 0755); err != nil {
+			return fmt.Errorf("failed to make update executable: %w", err)
 		}
 
-		if err := os.WriteFile(currentExe, input, 0755); err != nil {
-			return fmt.Errorf("failed to update executable: %w", err)
+		updaterScript := filepath.Join(os.TempDir(), "thighpads_updater.sh")
+		scriptContent := fmt.Sprintf(
+			`#!/bin/bash
+sleep 1
+cp -f "%s" "%s"
+chmod +x "%s"
+rm "%s"
+exec "%s"
+`, tempFile.Name(), currentExe, currentExe, tempFile.Name(), currentExe)
+
+		if err := os.WriteFile(updaterScript, []byte(scriptContent), 0755); err != nil {
+			return fmt.Errorf("failed to create updater script: %w", err)
 		}
+
+		cmd := exec.Command("/bin/bash", updaterScript)
+		if err := cmd.Start(); err != nil {
+			return fmt.Errorf("failed to start updater: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
 
 	fmt.Println("Update will be applied when ThighPads restarts.")

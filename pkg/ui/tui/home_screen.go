@@ -47,17 +47,18 @@ func (a *App) updateHomeScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a *App) viewHomeScreen() string {
-	title := Title.Render("ThighPads")
-	subtitle := Subtitle.Render(fmt.Sprintf("Welcome, %s", a.config.Username))
+	title := Title.Copy().Width(a.width - 4).Render("ThighPads")
+	subtitle := Subtitle.Copy().Width(a.width - 4).Render(fmt.Sprintf("Welcome, %s", a.config.Username))
 
 	var content string
 	if len(a.tables) == 0 {
-		content = BoxStyle.Render(Normal.Render("You don't have any tables yet. Press 'n' to create your first one."))
+		content = BoxStyle.Copy().Width(a.width - 4).Render(Normal.Render("You don't have any tables yet. Press 'n' to create your first one."))
 	} else {
-		content = BoxStyle.Render(a.list.View())
+		content = BoxStyle.Copy().Width(a.width - 4).Render(a.list.View())
 	}
 
 	help := HelpView(map[string]string{
+		"↑/↓":   "Navigate",
 		"Enter": "Select table",
 		"n":     "New table",
 		"i":     "Import table",

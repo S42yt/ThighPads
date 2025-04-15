@@ -33,16 +33,32 @@ func (d ItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 		return
 	}
 
+	width := m.Width() - 4 
+	if width < 10 {
+		width = 10 
+	}
+
 	var title, desc string
 	if index == m.Index() {
-		title = Selected.Render(i.Title)
-		desc = Selected.Render(i.Description)
+		title = Selected.Copy().Width(width).Render(truncateString(i.Title, width-4))
+		desc = Selected.Copy().Width(width).Render(truncateString(i.Description, width-4))
 	} else {
-		title = Unselected.Render(i.Title)
-		desc = Subtle.Render(i.Description)
+		title = Unselected.Copy().Width(width).Render(truncateString(i.Title, width-4))
+		desc = Subtle.Copy().Width(width).Render(truncateString(i.Description, width-4))
 	}
 
 	fmt.Fprintf(w, "%s\n%s", title, desc)
+}
+
+
+func truncateString(s string, max int) string {
+	if max <= 3 {
+		return s
+	}
+	if len(s) <= max {
+		return s
+	}
+	return s[:max-3] + "..."
 }
 
 func TextInputField(placeholder string) textinput.Model {
@@ -65,6 +81,14 @@ func SelectableList(title string, items []list.Item, width, height int) list.Mod
 	l.Styles.FilterPrompt = Subtitle
 	l.Styles.FilterCursor = Subtitle
 
+	
+	l.SetShowHelp(false)
+	l.SetShowPagination(true)
+	l.Styles.PaginationStyle = Subtle
+
+	
+	l.Styles.HelpStyle = Subtle
+
 	return l
 }
 
@@ -79,17 +103,20 @@ func HelpView(keys map[string]string) string {
 	}
 
 	helpText := strings.Join(helpEntries, " • ")
-	return BoxStyle.Render(helpText)
+	return BoxStyle.Copy().Border(lipgloss.NormalBorder()).Render(helpText)
 }
 
 func ErrorView(message string) string {
-	return Error.Render("Error: " + message)
+	return Error.Copy().Width(40).Render("Error: " + message)
 }
 
 func SuccessView(message string) string {
-	return Success.Render(message)
+	return Success.Copy().Width(40).Render(message)
 }
 
 func CenterView(content string, width int) string {
+	if width < 10 {
+		width = 10 
+	}
 	return lipgloss.Place(width, 1, lipgloss.Center, lipgloss.Center, content)
 }

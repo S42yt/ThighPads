@@ -62,3 +62,8 @@ var (
 			Background(backgroundColor).
 			Padding(1, 2)
 )
+
+// Helper function to apply width to styles
+func WithWidth(style lipgloss.Style, width int) lipgloss.Style {
+	return style.Copy().Width(width)
+}

@@ -50,10 +50,25 @@ jobs:
           version_without_v=$(echo "${{ steps.get_latest_tag.outputs.version }}" | sed 's/v//')
           sed -i 's/appVersion        = ".*"/appVersion        = "'$version_without_v'"/g' cmd/thighpads/main.go
 
-      - name: Build binary
+      - name: Build binaries for multiple platforms
         run: |
-          # Build a single Windows binary
-          GOOS=windows GOARCH=amd64 go build -v -o thighpads_${{ steps.get_latest_tag.outputs.version }}.exe ./cmd/thighpads
+          # Windows
+          GOOS=windows GOARCH=amd64 go build -v -o thighpads_windows_amd64.exe ./cmd/thighpads
+          
+          # macOS
+          GOOS=darwin GOARCH=amd64 go build -v -o thighpads_darwin_amd64 ./cmd/thighpads
+          GOOS=darwin GOARCH=arm64 go build -v -o thighpads_darwin_arm64 ./cmd/thighpads
+          
+          # Linux
+          GOOS=linux GOARCH=amd64 go build -v -o thighpads_linux_amd64 ./cmd/thighpads
+          GOOS=linux GOARCH=arm64 go build -v -o thighpads_linux_arm64 ./cmd/thighpads
+          
+          # Create versioned copies
+          cp thighpads_windows_amd64.exe "thighpads_${{ steps.get_latest_tag.outputs.version }}_windows_amd64.exe"
+          cp thighpads_darwin_amd64 "thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64"
+          cp thighpads_darwin_arm64 "thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_arm64"
+          cp thighpads_linux_amd64 "thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64"
+          cp thighpads_linux_arm64 "thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_arm64"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -65,17 +80,34 @@ jobs:
           body: |
             # ThighPads ${{ steps.get_latest_tag.outputs.version }}
                         
-            ## BUGS:
+            ## Download the appropriate binary for your platform:
+            
+            - Windows: thighpads_windows_amd64.exe
+            - macOS (Intel): thighpads_darwin_amd64
+            - macOS (Apple Silicon): thighpads_darwin_arm64
+            - Linux (x86_64): thighpads_linux_amd64
+            - Linux (ARM64): thighpads_linux_arm64
+            
+            ## BUGS FIXED:
             -
             -
             
-            ## FEATURES:
+            ## NEW FEATURES:
             -
             -
             
-            ## CONTRIBUTERS:
+            ## CONTRIBUTORS:
             -
           files: |
-            thighpads_${{ steps.get_latest_tag.outputs.version }}.exe
+            thighpads_windows_amd64.exe
+            thighpads_darwin_amd64
+            thighpads_darwin_arm64
+            thighpads_linux_amd64
+            thighpads_linux_arm64
+            thighpads_${{ steps.get_latest_tag.outputs.version }}_windows_amd64.exe
+            thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64
+            thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_arm64
+            thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64
+            thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_arm64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
