@@ -50,9 +50,10 @@ jobs:
           version_without_v=$(echo "${{ steps.get_latest_tag.outputs.version }}" | sed 's/v//')
           sed -i 's/appVersion        = ".*"/appVersion        = "'$version_without_v'"/g' cmd/thighpads/main.go
 
-      - name: Build Windows binary
+      - name: Build binary
         run: |
-          GOOS=windows GOARCH=amd64 go build -v -o thighpads_${{ steps.get_latest_tag.outputs.version }}_windows_amd64.exe ./cmd/thighpads
+          # Build a single Windows binary
+          GOOS=windows GOARCH=amd64 go build -v -o thighpads_${{ steps.get_latest_tag.outputs.version }}.exe ./cmd/thighpads
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
