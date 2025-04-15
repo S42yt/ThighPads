@@ -41,8 +41,11 @@ curl -L https://github.com/s42yt/thighpads/releases/latest/download/thighpads-li
 # Make executable
 chmod +x thighpads
 
-# Move to a directory in your PATH
-sudo mv thighpads /usr/local/bin/
+# Start it to install
+path/to/executable
+
+# Or use install
+path/to/executable --install
 ```
 
 #### Method 2: Building from Source
