@@ -84,7 +84,7 @@ jobs:
             
             ## CONTRIBUTERS:
             -
-            -          files: |
+          files: |
             thighpads_${{ steps.get_latest_tag.outputs.version }}_windows_amd64.exe
             thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64.tar.gz
             thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64.tar.gz
