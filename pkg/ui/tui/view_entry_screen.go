@@ -23,7 +23,7 @@ func (a *App) updateViewEntryScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.entryContent.Focus()
 			return a, nil
 		case "c":
-			
+
 			err := clipboard.WriteAll(a.currentEntry.Content)
 			if err != nil {
 				a.errorMsg = "Failed to copy to clipboard: " + err.Error()

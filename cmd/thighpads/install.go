@@ -9,7 +9,6 @@ import (
 	"strings"
 )
 
-
 func isInstalledGlobally() bool {
 	switch runtime.GOOS {
 	case "windows":
@@ -43,7 +42,6 @@ func isInstalledGlobally() bool {
 		return false
 	}
 }
-
 
 func installGlobalSilently() {
 	go func() {

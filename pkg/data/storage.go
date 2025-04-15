@@ -38,17 +38,14 @@ const (
 	FileVersion   = "1.0"
 )
 
-// ExportTable exports a table to the default location
 func ExportTable(tableID uint, exportedBy string) (string, error) {
 	return ExportTableToLocation(tableID, exportedBy, DefaultLocation)
 }
 
-// ExportTableToDesktop exports a table to the desktop location
 func ExportTableToDesktop(tableID uint, exportedBy string) (string, error) {
 	return ExportTableToLocation(tableID, exportedBy, DesktopLocation)
 }
 
-// ExportTableToLocation exports a table to the specified location
 func ExportTableToLocation(tableID uint, exportedBy string, location ExportLocation) (string, error) {
 	table, err := database.GetTableWithEntries(tableID)
 	if err != nil {
@@ -70,10 +67,8 @@ func ExportTableToLocation(tableID uint, exportedBy string, location ExportLocat
 		return "", err
 	}
 
-	// Create a safe filename without special characters
-	safeFilename := sanitizeFilename(table.Name)
+	safeFilename := SanitizeFilename(table.Name)
 
-	// Get export paths based on location
 	paths := []string{}
 
 	if location == DefaultLocation || location == BothLocations {
@@ -87,7 +82,7 @@ func ExportTableToLocation(tableID uint, exportedBy string, location ExportLocat
 	if location == DesktopLocation || location == BothLocations {
 		desktopPath, err := config.GetDesktopExportPath()
 		if err != nil {
-			// If desktop path fails, just log it but continue with default path
+
 			fmt.Printf("Warning: could not get desktop export path: %v\n", err)
 		} else {
 			paths = append(paths, desktopPath)
@@ -98,12 +93,10 @@ func ExportTableToLocation(tableID uint, exportedBy string, location ExportLocat
 		return "", errors.New("no valid export paths available")
 	}
 
-	// Keep track of the last path exported to
 	var lastExportedPath string
 
-	// Export to all paths
 	for _, path := range paths {
-		// Ensure directory exists
+
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			if err := os.MkdirAll(path, 0755); err != nil {
 				fmt.Printf("Warning: could not create export directory %s: %v\n", path, err)
@@ -113,7 +106,6 @@ func ExportTableToLocation(tableID uint, exportedBy string, location ExportLocat
 
 		filename := filepath.Join(path, safeFilename+FileExtension)
 
-		// Check if file exists and append a number to make it unique
 		counter := 1
 		originalFilename := filename
 		for {
@@ -184,9 +176,8 @@ func ImportFile(filePath string, newAuthor string) error {
 	return nil
 }
 
-// sanitizeFilename removes or replaces characters that are not safe for filenames
-func sanitizeFilename(name string) string {
-	// Replace invalid filename characters with underscores
+func SanitizeFilename(name string) string {
+
 	invalidChars := []rune{'<', '>', ':', '"', '/', '\\', '|', '?', '*'}
 	result := []rune(name)
 
@@ -199,11 +190,9 @@ func sanitizeFilename(name string) string {
 		}
 	}
 
-	// Ensure filename doesn't start or end with spaces or periods
 	resultStr := string(result)
 	resultStr = filepath.Clean(resultStr)
 
-	// If after cleaning we have an empty string, use a default name
 	if resultStr == "" || resultStr == "." || resultStr == ".." {
 		resultStr = "ThighPads_Export"
 	}

@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/s42yt/thighpads/pkg/data"
@@ -24,6 +25,8 @@ func (a *App) updateExportScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, nil
 		case "enter":
 			if a.exportName.Value() != "" {
+				a.successMsg = "Exporting table. Please wait..."
+
 				var filename string
 				var err error
 
@@ -42,7 +45,7 @@ func (a *App) updateExportScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				a.screen = TableScreen
-				a.successMsg = "Table exported successfully to: " + filename
+				a.successMsg = "Table exported successfully to: " + filepath.Base(filename)
 				return a, nil
 			}
 		case "esc":
@@ -77,6 +80,13 @@ func (a *App) viewExportScreen() string {
 		locationInfo = Normal.Render("Select export location: [1] Default  [2] Desktop  [3] Both")
 	}
 
+	filename := ""
+	if a.exportLocation != -1 {
+		filename = Subtle.Render(fmt.Sprintf("File will be saved as: %s%s",
+			data.SanitizeFilename(a.currentTable.Name),
+			data.FileExtension))
+	}
+
 	help := HelpView(map[string]string{
 		"1-3":    "Select location",
 		"Enter":  "Export table",
@@ -85,11 +95,12 @@ func (a *App) viewExportScreen() string {
 	})
 
 	return fmt.Sprintf(
-		"%s\n%s\n\n%s\n\n%s\n\n%s",
+		"%s\n%s\n\n%s\n\n%s\n%s\n\n%s",
 		title,
 		subtitle,
 		exportInfo,
 		locationInfo,
+		filename,
 		help,
 	)
 }

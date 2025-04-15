@@ -20,6 +20,16 @@ func (a *App) updateHomeScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.screen = ImportScreen
 			a.importPathInput = TextInputField("Enter path to .thighpad file")
 			return a, nil
+		case "d":
+			if len(a.tables) > 0 {
+				selected, ok := a.list.SelectedItem().(Selectable)
+				if ok {
+					a.confirmDeleteTable = selected.ID
+					a.confirmationScreen = DeleteTableConfirmation
+					return a, nil
+				}
+			}
+			return a, nil
 		case "q", "ctrl+c":
 			return a, tea.Quit
 		case "enter":
@@ -61,6 +71,7 @@ func (a *App) viewHomeScreen() string {
 		"Enter": "Select table",
 		"n":     "New table",
 		"i":     "Import table",
+		"d":     "Delete table",
 		"q":     "Quit",
 	})
 
