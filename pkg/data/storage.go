@@ -1,117 +1,212 @@
 package data
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/s42yt/thighpads/pkg/config"
 	"github.com/s42yt/thighpads/pkg/database"
 	"github.com/s42yt/thighpads/pkg/models"
 )
 
-// Storage represents a data storage backend
-type Storage struct {
-	db  *database.DB
-	cfg *config.Config
+type ThighpadFile struct {
+	Table   models.Table     `json:"table"`
+	Entries []models.Entry   `json:"entries"`
+	Meta    ThighpadFileMeta `json:"meta"`
 }
 
-// New creates a new storage instance
-func New(cfg *config.Config) (*Storage, error) {
-	// Ensure data directory exists
-	if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create data directory: %w", err)
-	}
+type ThighpadFileMeta struct {
+	ExportedAt time.Time `json:"exportedAt"`
+	ExportedBy string    `json:"exportedBy"`
+	Version    string    `json:"version"`
+}
 
-	// Create database connection
-	db, err := database.New(cfg)
+type ExportLocation int
+
+const (
+	DefaultLocation ExportLocation = iota
+	DesktopLocation
+	BothLocations
+)
+
+const (
+	FileExtension = ".thighpad"
+	FileVersion   = "1.0"
+)
+
+// ExportTable exports a table to the default location
+func ExportTable(tableID uint, exportedBy string) (string, error) {
+	return ExportTableToLocation(tableID, exportedBy, DefaultLocation)
+}
+
+// ExportTableToDesktop exports a table to the desktop location
+func ExportTableToDesktop(tableID uint, exportedBy string) (string, error) {
+	return ExportTableToLocation(tableID, exportedBy, DesktopLocation)
+}
+
+// ExportTableToLocation exports a table to the specified location
+func ExportTableToLocation(tableID uint, exportedBy string, location ExportLocation) (string, error) {
+	table, err := database.GetTableWithEntries(tableID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize database: %w", err)
+		return "", err
 	}
 
-	return &Storage{
-		db:  db,
-		cfg: cfg,
-	}, nil
-}
+	thighpadFile := ThighpadFile{
+		Table:   table,
+		Entries: table.Entries,
+		Meta: ThighpadFileMeta{
+			ExportedAt: time.Now(),
+			ExportedBy: exportedBy,
+			Version:    FileVersion,
+		},
+	}
 
-// Close closes the storage backend
-func (s *Storage) Close() error {
-	return s.db.Close()
-}
-
-// GetTables returns all available tables
-func (s *Storage) GetTables() ([]*models.Table, error) {
-	return s.db.GetAllTables()
-}
-
-// GetTable retrieves a table by name
-func (s *Storage) GetTable(name string) (*models.Table, error) {
-	return s.db.GetTable(name)
-}
-
-// CreateTable creates a new table
-func (s *Storage) CreateTable(name, author string) (*models.Table, error) {
-	return s.db.CreateTable(name, author)
-}
-
-// DeleteTable deletes a table
-func (s *Storage) DeleteTable(name string) error {
-	return s.db.DeleteTable(name)
-}
-
-// AddEntry adds a new entry to a table
-func (s *Storage) AddEntry(tableName string, entry models.Entry) error {
-	return s.db.AddEntry(tableName, entry)
-}
-
-// UpdateEntry updates an existing entry
-func (s *Storage) UpdateEntry(tableName string, entryID string, entry models.Entry) error {
-	return s.db.UpdateEntry(tableName, entryID, entry)
-}
-
-// DeleteEntry removes an entry from a table
-func (s *Storage) DeleteEntry(tableName string, entryID string) error {
-	return s.db.DeleteEntry(tableName, entryID)
-}
-
-// SearchEntries searches for entries across all tables
-func (s *Storage) SearchEntries(query string) ([]models.SearchResult, error) {
-	return s.db.SearchEntries(query)
-}
-
-// ExportTable exports a table to a file
-func (s *Storage) ExportTable(tableName, outputPath string) error {
-	// Get the table
-	table, err := s.db.ExportTable(tableName)
+	data, err := json.MarshalIndent(thighpadFile, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to export table: %w", err)
+		return "", err
 	}
 
-	// Save it to a file
-	table.Path = outputPath
-	if err := table.Save(); err != nil {
-		return fmt.Errorf("failed to save exported table: %w", err)
+	// Create a safe filename without special characters
+	safeFilename := sanitizeFilename(table.Name)
+
+	// Get export paths based on location
+	paths := []string{}
+
+	if location == DefaultLocation || location == BothLocations {
+		defaultPath, err := config.GetExportPath()
+		if err != nil {
+			return "", err
+		}
+		paths = append(paths, defaultPath)
+	}
+
+	if location == DesktopLocation || location == BothLocations {
+		desktopPath, err := config.GetDesktopExportPath()
+		if err != nil {
+			// If desktop path fails, just log it but continue with default path
+			fmt.Printf("Warning: could not get desktop export path: %v\n", err)
+		} else {
+			paths = append(paths, desktopPath)
+		}
+	}
+
+	if len(paths) == 0 {
+		return "", errors.New("no valid export paths available")
+	}
+
+	// Keep track of the last path exported to
+	var lastExportedPath string
+
+	// Export to all paths
+	for _, path := range paths {
+		// Ensure directory exists
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			if err := os.MkdirAll(path, 0755); err != nil {
+				fmt.Printf("Warning: could not create export directory %s: %v\n", path, err)
+				continue
+			}
+		}
+
+		filename := filepath.Join(path, safeFilename+FileExtension)
+
+		// Check if file exists and append a number to make it unique
+		counter := 1
+		originalFilename := filename
+		for {
+			if _, err := os.Stat(filename); os.IsNotExist(err) {
+				break
+			}
+			filename = fmt.Sprintf("%s_%d%s", originalFilename[:len(originalFilename)-len(FileExtension)], counter, FileExtension)
+			counter++
+		}
+
+		if err := os.WriteFile(filename, data, 0644); err != nil {
+			fmt.Printf("Warning: could not write to export file %s: %v\n", filename, err)
+			continue
+		}
+
+		lastExportedPath = filename
+	}
+
+	if lastExportedPath == "" {
+		return "", errors.New("failed to export to any location")
+	}
+
+	return lastExportedPath, nil
+}
+
+func ImportFile(filePath string, newAuthor string) error {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	var thighpadFile ThighpadFile
+	err = json.Unmarshal(data, &thighpadFile)
+	if err != nil {
+		return err
+	}
+
+	if thighpadFile.Meta.Version != FileVersion {
+		return errors.New("unsupported file version")
+	}
+
+	newTable := models.Table{
+		Name:      thighpadFile.Table.Name,
+		Author:    newAuthor,
+		CreatedAt: time.Now(),
+	}
+
+	err = database.CreateTable(&newTable)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range thighpadFile.Entries {
+		newEntry := models.Entry{
+			TableID:   newTable.ID,
+			Title:     entry.Title,
+			Tags:      entry.Tags,
+			Content:   entry.Content,
+			CreatedAt: time.Now(),
+		}
+
+		err = database.CreateEntry(&newEntry)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-// ImportTable imports a table from a file
-func (s *Storage) ImportTable(filePath string) error {
-	// Load the table from file
-	table, err := models.LoadTable(filePath)
-	if err != nil {
-		return fmt.Errorf("failed to load table: %w", err)
+// sanitizeFilename removes or replaces characters that are not safe for filenames
+func sanitizeFilename(name string) string {
+	// Replace invalid filename characters with underscores
+	invalidChars := []rune{'<', '>', ':', '"', '/', '\\', '|', '?', '*'}
+	result := []rune(name)
+
+	for i, ch := range result {
+		for _, invalid := range invalidChars {
+			if ch == invalid {
+				result[i] = '_'
+				break
+			}
+		}
 	}
 
-	// Import it to the database
-	return s.db.ImportTable(table)
-}
+	// Ensure filename doesn't start or end with spaces or periods
+	resultStr := string(result)
+	resultStr = filepath.Clean(resultStr)
 
-// GetBackupDir returns the backup directory path
-func (s *Storage) GetBackupDir() string {
-	backupDir := filepath.Join(s.cfg.DataDir, "backups")
-	os.MkdirAll(backupDir, 0755) // Ensure the backup directory exists
-	return backupDir
+	// If after cleaning we have an empty string, use a default name
+	if resultStr == "" || resultStr == "." || resultStr == ".." {
+		resultStr = "ThighPads_Export"
+	}
+
+	return resultStr
 }
