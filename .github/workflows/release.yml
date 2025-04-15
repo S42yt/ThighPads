@@ -69,28 +69,22 @@ jobs:
         with:
           tag_name: ${{ steps.get_latest_tag.outputs.version }}
           name: Release ${{ steps.get_latest_tag.outputs.version }}
-          draft: false
+          draft: true
           generate_release_notes: true
           body: |
             # ThighPads ${{ steps.get_latest_tag.outputs.version }}
+                        
+            ## BUGS:
+            -
+            -
             
-            ## Installation
+            ## FEATURES:
+            -
+            -
             
-            ### Windows
-            Download the .exe file and run it once. It will automatically install globally.
-            
-            ### macOS/Linux
-            1. Download the .tar.gz file (contains the .exe file)
-            2. Extract it with `tar -xzf thighpads_*_*.tar.gz`
-            3. Run the extracted executable once to install globally
-            
-            ## Changes in this version:
-            
-            - Automatic global installation on first run
-            - Improved update mechanism
-            - Standardized .exe file format across all platforms
-            
-          files: |
+            ## CONTRIBUTERS:
+            -
+            -          files: |
             thighpads_${{ steps.get_latest_tag.outputs.version }}_windows_amd64.exe
             thighpads_${{ steps.get_latest_tag.outputs.version }}_darwin_amd64.tar.gz
             thighpads_${{ steps.get_latest_tag.outputs.version }}_linux_amd64.tar.gz
