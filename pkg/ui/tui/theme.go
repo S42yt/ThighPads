@@ -1,6 +1,9 @@
 package tui
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
+	"github.com/s42yt/thighpads/pkg/models"
+)
 
 var (
 	accentColor     = lipgloss.Color("#7D56F4")
@@ -63,7 +66,47 @@ var (
 			Padding(1, 2)
 )
 
-// Helper function to apply width to styles
 func WithWidth(style lipgloss.Style, width int) lipgloss.Style {
 	return style.Copy().Width(width)
+}
+
+func ApplyCustomTheme(theme *models.ThemeColors) {
+	accentColor = lipgloss.Color(theme.Accent)
+	secondaryColor = lipgloss.Color(theme.Secondary)
+	textColor = lipgloss.Color(theme.Text)
+	subtleColor = lipgloss.Color(theme.Subtle)
+	errorColor = lipgloss.Color(theme.Error)
+	successColor = lipgloss.Color(theme.Success)
+	warningColor = lipgloss.Color(theme.Warning)
+	backgroundColor = lipgloss.Color(theme.Background)
+
+	Title = lipgloss.NewStyle().
+		Foreground(accentColor).
+		Bold(true).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(accentColor).
+		Padding(0, 2)
+
+	Subtitle = lipgloss.NewStyle().
+		Foreground(secondaryColor).
+		Bold(true)
+
+	Normal = lipgloss.NewStyle().
+		Foreground(textColor)
+
+	Subtle = lipgloss.NewStyle().
+		Foreground(subtleColor)
+
+	Success = lipgloss.NewStyle().
+		Foreground(successColor)
+
+	Error = lipgloss.NewStyle().
+		Foreground(errorColor)
+
+	Warning = lipgloss.NewStyle().
+		Foreground(warningColor)
+
+	AppStyle = lipgloss.NewStyle().
+		Background(backgroundColor).
+		Padding(1, 2)
 }

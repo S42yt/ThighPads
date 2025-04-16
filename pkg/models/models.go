@@ -1,6 +1,8 @@
 package models
 
 import (
+	"encoding/json"
+	"os"
 	"time"
 )
 
@@ -30,6 +32,20 @@ type ThemeColors struct {
 	Success    string `json:"success"`
 	Warning    string `json:"warning"`
 	Background string `json:"background"`
+}
+
+func LoadThemeFromFile(filePath string) (*ThemeColors, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var theme ThemeColors
+	if err := json.Unmarshal(data, &theme); err != nil {
+		return nil, err
+	}
+
+	return &theme, nil
 }
 
 type Config struct {

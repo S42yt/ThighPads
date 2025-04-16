@@ -5,6 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/s42yt/thighpads/pkg/config"
+	"github.com/s42yt/thighpads/pkg/models"
 )
 
 func (a *App) updateSettingsScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -40,6 +41,16 @@ func (a *App) updateSettingsScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 			default:
 				a.config.DefaultExport = "config"
 			}
+			return a, nil
+		case "4":
+			filePath := "path/to/custom_theme.json"
+			customTheme, err := models.LoadThemeFromFile(filePath)
+			if err != nil {
+				a.errorMsg = "Failed to load custom theme: " + err.Error()
+				return a, nil
+			}
+			ApplyCustomTheme(customTheme)
+			a.successMsg = "Custom theme applied successfully."
 			return a, nil
 		case "s":
 
@@ -93,26 +104,20 @@ func (a *App) viewSettingsScreen() string {
 	}
 
 	settings := BoxStyle.Render(
-		fmt.Sprintf("%s: %s\n\n%s: %s\n\n%s: %s",
+		fmt.Sprintf("%s: %s\n\n%s: %s\n\n%s: %s\n\n%s",
 			Subtitle.Render("1. Theme"),
 			Normal.Render(themeStatus),
 			Subtitle.Render("2. Auto-check updates"),
 			Normal.Render(autoUpdateStatus),
 			Subtitle.Render("3. Default export location"),
 			Normal.Render(exportStatus),
+			Subtitle.Render("4. Load custom theme"),
 		),
 	)
 
-	help := HelpView(map[string]string{
-		"1-3": "Change setting",
-		"s":   "Save settings",
-		"Esc": "Cancel",
-	})
-
 	return fmt.Sprintf(
-		"%s\n\n%s\n\n%s",
+		"%s\n\n%s",
 		title,
 		settings,
-		help,
 	)
 }

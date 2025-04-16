@@ -56,16 +56,9 @@ func (a *App) viewNewTableScreen() string {
 		),
 	)
 
-	help := HelpView(map[string]string{
-		"Enter":  "Create table",
-		"Esc":    "Cancel",
-		"Ctrl+C": "Quit",
-	})
-
 	return fmt.Sprintf(
-		"%s\n\n%s\n\n%s",
+		"%s\n\n%s",
 		title,
 		nameInput,
-		help,
 	)
 }

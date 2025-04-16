@@ -77,19 +77,11 @@ func (a *App) viewExportScreen() string {
 		locationInfo = Normal.Render("Select export location: [1] Default  [2] Desktop  [3] Both")
 	}
 
-	help := HelpView(map[string]string{
-		"1-3":    "Select location",
-		"Enter":  "Export table",
-		"Esc":    "Cancel",
-		"Ctrl+C": "Quit",
-	})
-
 	return fmt.Sprintf(
-		"%s\n%s\n\n%s\n\n%s\n\n%s",
+		"%s\n%s\n\n%s\n\n%s",
 		title,
 		subtitle,
 		exportInfo,
 		locationInfo,
-		help,
 	)
 }

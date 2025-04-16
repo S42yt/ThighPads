@@ -34,6 +34,14 @@ const (
 	BothExport
 )
 
+type HelpMsg bool
+
+func ToggleHelp() tea.Cmd {
+	return func() tea.Msg {
+		return HelpMsg(true)
+	}
+}
+
 type App struct {
 	screen          Screen
 	width           int
@@ -56,6 +64,7 @@ type App struct {
 	successMsg      string
 	exportLocation  int
 	bottomGap       int
+	showFullHelp    bool
 }
 
 func Initialize() (*tea.Program, error) {
@@ -89,9 +98,10 @@ func Initialize() (*tea.Program, error) {
 	}
 
 	app := &App{
-		screen:    initialScreen,
-		config:    cfg,
-		bottomGap: 4,
+		screen:       initialScreen,
+		config:       cfg,
+		bottomGap:    4,
+		showFullHelp: false,
 	}
 
 	if app.screen == SetupScreen {
@@ -111,7 +121,21 @@ func (a *App) Init() tea.Cmd {
 func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	if _, ok := msg.(tea.KeyMsg); ok {
+	if _, ok := msg.(HelpMsg); ok {
+		a.showFullHelp = !a.showFullHelp
+		return a, nil
+	}
+
+	if k, ok := msg.(tea.KeyMsg); ok {
+
+		inTextInput := (a.screen == NewEntryScreen || a.screen == EditEntryScreen ||
+			a.screen == ImportScreen || a.screen == SetupScreen || a.screen == NewTableScreen)
+
+		if (inTextInput && k.String() == "ctrl+h") || (!inTextInput && k.String() == "h") {
+			a.showFullHelp = !a.showFullHelp
+			return a, nil
+		}
+
 		a.errorMsg = ""
 		a.successMsg = ""
 	}
@@ -166,28 +190,113 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (a *App) View() string {
 	var view string
+	var toolbarKeys map[string]string
+
+	inTextInput := (a.screen == NewEntryScreen || a.screen == EditEntryScreen ||
+		a.screen == ImportScreen || a.screen == SetupScreen || a.screen == NewTableScreen)
+
+	helpKey := "h"
+	helpDesc := "Show help"
+	if inTextInput {
+		helpKey = "Ctrl+h"
+	}
+
+	if a.showFullHelp {
+		helpDesc = "Hide help"
+	}
 
 	switch a.screen {
 	case SetupScreen:
 		view = a.viewSetupScreen()
+		toolbarKeys = map[string]string{
+			"Enter":  "Save username",
+			helpKey:  helpDesc,
+			"Ctrl+C": "Quit",
+		}
 	case HomeScreen:
 		view = a.viewHomeScreen()
+		toolbarKeys = map[string]string{
+			"↑/↓":   "Navigate",
+			"Enter": "Select table",
+			"n":     "New table",
+			"s":     "Settings",
+			"i":     "Import table",
+			helpKey: helpDesc,
+			"q":     "Quit",
+		}
 	case TableScreen:
 		view = a.viewTableScreen()
+		toolbarKeys = map[string]string{
+			"↑/↓":   "Navigate",
+			"Enter": "View entry",
+			"n":     "New entry",
+			"d":     "Delete entry",
+			"e":     "Export table",
+			"b":     "Back to home",
+			helpKey: helpDesc,
+			"q":     "Quit",
+		}
 	case NewTableScreen:
 		view = a.viewNewTableScreen()
+		toolbarKeys = map[string]string{
+			"Enter":  "Create table",
+			"Esc":    "Cancel",
+			helpKey:  helpDesc,
+			"Ctrl+C": "Quit",
+		}
 	case NewEntryScreen:
 		view = a.viewNewEntryScreen()
+		toolbarKeys = map[string]string{
+			"Tab":    "Next field",
+			"Ctrl+S": "Save entry",
+			"Esc":    "Cancel",
+			helpKey:  helpDesc,
+			"Ctrl+C": "Quit",
+		}
 	case ViewEntryScreen:
 		view = a.viewViewEntryScreen()
+		toolbarKeys = map[string]string{
+			"↑/↓":   "Scroll",
+			"e":     "Edit",
+			"c":     "Copy to clipboard",
+			"b":     "Back",
+			helpKey: helpDesc,
+			"q":     "Quit",
+		}
 	case EditEntryScreen:
 		view = a.viewEditEntryScreen()
+		toolbarKeys = map[string]string{
+			"Tab":    "Next field",
+			"Ctrl+S": "Save changes",
+			"Esc":    "Cancel",
+			helpKey:  helpDesc,
+			"Ctrl+C": "Quit",
+		}
 	case ImportScreen:
 		view = a.viewImportScreen()
+		toolbarKeys = map[string]string{
+			"Enter":  "Import table",
+			"Esc":    "Cancel",
+			helpKey:  helpDesc,
+			"Ctrl+C": "Quit",
+		}
 	case ExportScreen:
 		view = a.viewExportScreen()
+		toolbarKeys = map[string]string{
+			"1-3":    "Select location",
+			"Enter":  "Export table",
+			"Esc":    "Cancel",
+			helpKey:  helpDesc,
+			"Ctrl+C": "Quit",
+		}
 	case SettingsScreen:
 		view = a.viewSettingsScreen()
+		toolbarKeys = map[string]string{
+			"1-4":   "Change setting",
+			"s":     "Save settings",
+			helpKey: helpDesc,
+			"Esc":   "Cancel",
+		}
 	}
 
 	statusView := ""
@@ -198,7 +307,31 @@ func (a *App) View() string {
 		statusView = "\n" + SuccessView(a.successMsg)
 	}
 
-	return AppStyle.Render(view + statusView)
+	contentView := view
+
+	if a.showFullHelp {
+
+		helpHeight := a.height / 2
+		if helpHeight > 20 {
+			helpHeight = 20
+		}
+
+		inTextInput := (a.screen == NewEntryScreen || a.screen == EditEntryScreen ||
+			a.screen == ImportScreen || a.screen == SetupScreen || a.screen == NewTableScreen)
+
+		helpView := FullHelpView(toolbarKeys, a.width, helpHeight, inTextInput)
+		contentView = contentView + "\n\n" + helpView
+	}
+
+	if !a.showFullHelp {
+
+	} else {
+
+	}
+
+	help := FixedToolbarView(toolbarKeys, a.width)
+
+	return AppStyle.Render(contentView + statusView + "\n" + help)
 }
 
 func (a *App) loadTables() {

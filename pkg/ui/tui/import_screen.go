@@ -62,16 +62,9 @@ func (a *App) viewImportScreen() string {
 		),
 	)
 
-	help := HelpView(map[string]string{
-		"Enter":  "Import table",
-		"Esc":    "Cancel",
-		"Ctrl+C": "Quit",
-	})
-
 	return fmt.Sprintf(
-		"%s\n\n%s\n\n%s",
+		"%s\n\n%s",
 		title,
 		importInput,
-		help,
 	)
 }

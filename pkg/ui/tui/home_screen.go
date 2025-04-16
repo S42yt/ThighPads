@@ -60,20 +60,10 @@ func (a *App) viewHomeScreen() string {
 		content = BoxStyle.Copy().Width(a.width - 4).Render(a.list.View())
 	}
 
-	help := HelpView(map[string]string{
-		"↑/↓":   "Navigate",
-		"Enter": "Select table",
-		"n":     "New table",
-		"s":     "Settings",
-		"i":     "Import table",
-		"q":     "Quit",
-	})
-
 	return fmt.Sprintf(
-		"%s\n%s\n\n%s\n\n%s",
+		"%s\n%s\n\n%s",
 		title,
 		subtitle,
 		content,
-		help,
 	)
 }

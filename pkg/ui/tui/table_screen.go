@@ -109,21 +109,10 @@ func (a *App) viewTableScreen() string {
 		a.errorMsg = "confirm_delete"
 	}
 
-	help := HelpView(map[string]string{
-		"↑/↓":   "Navigate",
-		"Enter": "View entry",
-		"n":     "New entry",
-		"d":     "Delete entry",
-		"e":     "Export table",
-		"b":     "Back to home",
-		"q":     "Quit",
-	})
-
 	return fmt.Sprintf(
-		"%s\n%s\n\n%s\n\n%s",
+		"%s\n%s\n\n%s",
 		title,
 		subtitle,
 		content,
-		help,
 	)
 }

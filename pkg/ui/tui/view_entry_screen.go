@@ -68,21 +68,12 @@ func (a *App) viewViewEntryScreen() string {
 			scrollPercent, a.entryViewport.YOffset+1, a.entryViewport.TotalLineCount()))
 	}
 
-	help := HelpView(map[string]string{
-		"↑/↓": "Scroll",
-		"e":   "Edit",
-		"c":   "Copy to clipboard",
-		"b":   "Back",
-		"q":   "Quit",
-	})
-
 	return fmt.Sprintf(
-		"%s\n%s\n%s\n\n%s\n%s\n\n%s",
+		"%s\n%s\n%s\n\n%s\n%s",
 		title,
 		tags,
 		date,
 		content,
 		scrollInfo,
-		help,
 	)
 }

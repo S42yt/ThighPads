@@ -86,18 +86,10 @@ func (a *App) viewNewEntryScreen() string {
 		),
 	)
 
-	help := HelpView(map[string]string{
-		"Tab":    "Next field",
-		"Ctrl+S": "Save entry",
-		"Esc":    "Cancel",
-		"Ctrl+C": "Quit",
-	})
-
 	return fmt.Sprintf(
-		"%s\n%s\n\n%s\n\n%s",
+		"%s\n%s\n\n%s",
 		title,
 		subtitle,
 		form,
-		help,
 	)
 }

@@ -47,16 +47,10 @@ func (a *App) viewSetupScreen() string {
 		),
 	)
 
-	help := HelpView(map[string]string{
-		"Enter":  "Save username",
-		"Ctrl+C": "Quit",
-	})
-
 	return fmt.Sprintf(
-		"%s\n\n%s\n\n%s\n\n%s",
+		"%s\n\n%s\n\n%s",
 		title,
 		subtitle,
 		usernameInput,
-		help,
 	)
 }
