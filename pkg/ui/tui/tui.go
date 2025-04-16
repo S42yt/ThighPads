@@ -25,6 +25,7 @@ const (
 	EditEntryScreen
 	ImportScreen
 	ExportScreen
+	SettingsScreen
 )
 
 const (
@@ -119,19 +120,16 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.width = msg.Width
 		a.height = msg.Height
 
-		// Update list dimensions
 		if a.list.Items() != nil {
 			a.list.SetWidth(msg.Width - 4)
 			a.list.SetHeight(msg.Height - 12)
 		}
 
-		// Update viewport dimensions
 		if a.screen == ViewEntryScreen {
 			a.entryViewport.Width = msg.Width - 6
 			a.entryViewport.Height = msg.Height - 16
 		}
 
-		// Update textarea dimensions
 		if a.screen == NewEntryScreen || a.screen == EditEntryScreen {
 			a.entryContent.SetWidth(msg.Width - 6)
 			a.entryContent.SetHeight(msg.Height - 20)
@@ -159,6 +157,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a.updateImportScreen(msg)
 	case ExportScreen:
 		return a.updateExportScreen(msg)
+	case SettingsScreen:
+		return a.updateSettingsScreen(msg)
 	}
 
 	return a, cmd
@@ -186,6 +186,8 @@ func (a *App) View() string {
 		view = a.viewImportScreen()
 	case ExportScreen:
 		view = a.viewExportScreen()
+	case SettingsScreen:
+		view = a.viewSettingsScreen()
 	}
 
 	statusView := ""

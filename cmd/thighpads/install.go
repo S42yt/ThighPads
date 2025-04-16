@@ -415,11 +415,9 @@ func uninstallGlobal() error {
 	fmt.Println("║ ThighPads Uninstallation                           ║")
 	fmt.Println("╚════════════════════════════════════════════════════╝")
 	fmt.Print("Are you sure you want to uninstall ThighPads? [y/N]: ")
-
 	var response string
 	fmt.Scanln(&response)
 	response = strings.ToLower(response)
-
 	if response != "y" && response != "yes" {
 		fmt.Println("Uninstallation cancelled.")
 		return nil
@@ -455,12 +453,12 @@ func uninstallGlobal() error {
 	case <-progressDone:
 		doneChannel <- true
 		time.Sleep(500 * time.Millisecond)
-		fmt.Println("\n✅ ThighPads has been uninstalled successfully.")
+		fmt.Println("\n ThighPads has been uninstalled successfully.")
 		fmt.Println("   You may need to restart your terminal for PATH changes to take effect.")
 		return nil
 	case err := <-errorChan:
 		doneChannel <- true
-		fmt.Println("\n❌ Uninstallation failed.")
+		fmt.Println("\nUninstallation failed.")
 		return err
 	}
 }

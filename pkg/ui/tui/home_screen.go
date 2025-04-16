@@ -36,6 +36,9 @@ func (a *App) updateHomeScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			}
+		case "s":
+			a.screen = SettingsScreen
+			return a, nil
 		}
 	}
 
@@ -61,6 +64,7 @@ func (a *App) viewHomeScreen() string {
 		"↑/↓":   "Navigate",
 		"Enter": "Select table",
 		"n":     "New table",
+		"s":     "Settings",
 		"i":     "Import table",
 		"q":     "Quit",
 	})

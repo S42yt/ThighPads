@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+
 	wipe := flag.Bool("wipe", false, "Wipe all ThighPads data and start fresh")
 	showVersion := flag.Bool("version", false, "Show version information")
 	skipInstall := flag.Bool("skip-install", false, "Skip global installation")
@@ -17,7 +18,13 @@ func main() {
 	uninstall := flag.Bool("uninstall", false, "Uninstall ThighPads from your system")
 	checkUpdate := flag.Bool("check-update", false, "Check for updates")
 	update := flag.Bool("update", false, "Update ThighPads to the latest version")
+	showHelp := flag.Bool("help", false, "Show detailed help information")
 	flag.Parse()
+
+	if *showHelp {
+		printHelp()
+		os.Exit(0)
+	}
 
 	if *uninstall {
 		fmt.Println("Uninstalling ThighPads...")
@@ -112,4 +119,48 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func printHelp() {
+	fmt.Println("╔════════════════════════════════════════════════════╗")
+	fmt.Println("║ ThighPads Help                                     ║")
+	fmt.Println("╚════════════════════════════════════════════════════╝")
+	fmt.Println("")
+	fmt.Println("USAGE:")
+	fmt.Println("  thighpads [options]")
+	fmt.Println("")
+	fmt.Println("OPTIONS:")
+	fmt.Println("  --help           Show this help message")
+	fmt.Println("  --version        Show version information")
+	fmt.Println("  --check-update   Check for updates")
+	fmt.Println("  --update         Update ThighPads to the latest version")
+	fmt.Println("  --wipe           Wipe all ThighPads data and start fresh")
+	fmt.Println("  --install        Force global installation")
+	fmt.Println("  --skip-install   Skip global installation")
+	fmt.Println("  --uninstall      Uninstall ThighPads from your system")
+	fmt.Println("")
+	fmt.Println("KEYBOARD SHORTCUTS:")
+	fmt.Println("  Global:")
+	fmt.Println("    Ctrl+C    Quit")
+	fmt.Println("    Esc       Go back or cancel")
+	fmt.Println("")
+	fmt.Println("  Home Screen:")
+	fmt.Println("    Enter     Select table")
+	fmt.Println("    n         New table")
+	fmt.Println("    i         Import table")
+	fmt.Println("    q         Quit")
+	fmt.Println("")
+	fmt.Println("  Table Screen:")
+	fmt.Println("    Enter     View entry")
+	fmt.Println("    n         New entry")
+	fmt.Println("    d         Delete entry")
+	fmt.Println("    e         Export table")
+	fmt.Println("    b         Back to home")
+	fmt.Println("    q         Quit")
+	fmt.Println("")
+	fmt.Println("FILES:")
+	fmt.Println("  Configuration: ~/.config/thighpads/config.json")
+	fmt.Println("  Database:      ~/.config/thighpads/thighpads.db")
+	fmt.Println("  Exports:       ~/.config/thighpads/exports/")
+	fmt.Println("")
 }
