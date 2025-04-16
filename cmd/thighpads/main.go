@@ -159,8 +159,8 @@ func printHelp() {
 	fmt.Println("    q         Quit")
 	fmt.Println("")
 	fmt.Println("FILES:")
-	fmt.Println("  Configuration: ~/.config/thighpads/config.json")
-	fmt.Println("  Database:      ~/.config/thighpads/thighpads.db")
+	fmt.Println("  Configuration: ~/.config/thighpads/config.json")  
+	fmt.Println("  Database:      ~/.config/thighpads/thighpads.db") 
 	fmt.Println("  Exports:       ~/.config/thighpads/exports/")
 	fmt.Println("")
 }

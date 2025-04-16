@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ThighPads Theme Schema",
+  "description": "Schema for defining ThighPads themes",
+  "type": "object",
+  "required": ["name", "accent", "secondary", "text", "background"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the theme"
+    },
+    "author": {
+      "type": "string",
+      "description": "The creator of the theme"
+    },
+    "version": {
+      "type": "string",
+      "description": "The theme version"
+    },
+    "accent": {
+      "type": "string",
+      "description": "Primary accent color used for titles and borders",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+    },
+    "secondary": {
+      "type": "string",
+      "description": "Secondary accent color for subtitles and highlights",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+    },
+    "text": {
+      "type": "string",
+      "description": "Main text color",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+    },
+    "subtle": {
+      "type": "string",
+      "description": "Color for less important text",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+    },
+    "error": {
+      "type": "string",
+      "description": "Color for error messages",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+    },
+    "success": {
+      "type": "string",
+      "description": "Color for success messages",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+    },
+    "warning": {
+      "type": "string",
+      "description": "Color for warnings",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+    },
+    "background": {
+      "type": "string",
+      "description": "Background color for the application",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+    }
+  }
+}

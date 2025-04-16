@@ -1,0 +1,13 @@
+{
+    "name": "Mocha",
+    "author": "ThighPads",
+    "version": "1.0",
+    "accent": "#CBA6F7",
+    "secondary": "#F5C2E7",
+    "text": "#CDD6F4",
+    "subtle": "#A6ADC8",
+    "error": "#F38BA8",
+    "success": "#A6E3A1",
+    "warning": "#F9E2AF",
+    "background": "#1E1E2E"
+  }

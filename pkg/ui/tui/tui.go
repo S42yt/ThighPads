@@ -43,28 +43,31 @@ func ToggleHelp() tea.Cmd {
 }
 
 type App struct {
-	screen          Screen
-	width           int
-	height          int
-	config          *models.Config
-	tables          []models.Table
-	currentTable    models.Table
-	entries         []models.Entry
-	currentEntry    models.Entry
-	list            list.Model
-	usernameInput   textinput.Model
-	tableNameInput  textinput.Model
-	entryTitleInput textinput.Model
-	entryTagsInput  textinput.Model
-	entryContent    textarea.Model
-	entryViewport   viewport.Model
-	importPathInput textinput.Model
-	exportName      textinput.Model
-	errorMsg        string
-	successMsg      string
-	exportLocation  int
-	bottomGap       int
-	showFullHelp    bool
+	screen             Screen
+	width              int
+	height             int
+	config             *models.Config
+	tables             []models.Table
+	currentTable       models.Table
+	entries            []models.Entry
+	currentEntry       models.Entry
+	list               list.Model
+	usernameInput      textinput.Model
+	tableNameInput     textinput.Model
+	entryTitleInput    textinput.Model
+	entryTagsInput     textinput.Model
+	entryContent       textarea.Model
+	entryViewport      viewport.Model
+	importPathInput    textinput.Model
+	exportName         textinput.Model
+	errorMsg           string
+	successMsg         string
+	exportLocation     int
+	bottomGap          int
+	showFullHelp       bool
+	filePathInput      textinput.Model
+	settingsSubScreen  string
+	syntaxHighlighters map[string]*SyntaxHighlighter
 }
 
 func Initialize() (*tea.Program, error) {
@@ -98,20 +101,54 @@ func Initialize() (*tea.Program, error) {
 	}
 
 	app := &App{
-		screen:       initialScreen,
-		config:       cfg,
-		bottomGap:    4,
-		showFullHelp: false,
+		screen:             initialScreen,
+		config:             cfg,
+		bottomGap:          4,
+		showFullHelp:       false,
+		syntaxHighlighters: make(map[string]*SyntaxHighlighter),
 	}
 
 	if app.screen == SetupScreen {
 		app.usernameInput = TextInputField("Enter your username")
 	} else {
 		app.loadTables()
+		
+		if app.config.Theme != "" {
+			theme, err := config.LoadTheme(app.config.Theme)
+			if err == nil {
+				ApplyCustomTheme(theme)
+			}
+		}
+		
+		app.loadSyntaxHighlighters()
 	}
+
+	
+	app.filePathInput = TextInputField("Enter file path")
 
 	p := tea.NewProgram(app, tea.WithAltScreen())
 	return p, nil
+}
+
+
+func (a *App) loadSyntaxHighlighters() {
+	if !a.config.SyntaxHighlighting {
+		return
+	}
+
+	ClearSyntaxHighlighters()
+
+	
+	for _, name := range a.config.EnabledSyntaxThemes {
+		syntax, err := config.LoadSyntaxHighlighting(name)
+		if err != nil {
+			continue
+		}
+
+		highlighter := LoadSyntaxHighlighter(syntax)
+		a.syntaxHighlighters[name] = highlighter
+		AddSyntaxHighlighter(highlighter)
+	}
 }
 
 func (a *App) Init() tea.Cmd {
@@ -256,12 +293,12 @@ func (a *App) View() string {
 	case ViewEntryScreen:
 		view = a.viewViewEntryScreen()
 		toolbarKeys = map[string]string{
-			"↑/↓":   "Scroll",
-			"e":     "Edit",
-			"c":     "Copy to clipboard",
-			"b":     "Back",
-			helpKey: helpDesc,
-			"q":     "Quit",
+			"↑/↓":    "Scroll",
+			"Ctrl+e": "Edit",
+			"c":      "Copy to clipboard",
+			"Ctrl+b": "Back",
+			helpKey:  helpDesc,
+			"Ctrl+q": "Quit",
 		}
 	case EditEntryScreen:
 		view = a.viewEditEntryScreen()

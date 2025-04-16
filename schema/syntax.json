@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ThighPads Syntax Highlighting Schema",
+  "description": "Schema for defining ThighPads syntax highlighting rules",
+  "type": "object",
+  "required": ["name", "language", "tags", "tokenColors", "rules"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the syntax highlighter"
+    },
+    "author": {
+      "type": "string",
+      "description": "The creator of the syntax highlighter"
+    },
+    "version": {
+      "type": "string",
+      "description": "The syntax highlighter version"
+    },
+    "language": {
+      "type": "string",
+      "description": "The primary language this highlighter supports"
+    },
+    "tags": {
+      "type": "array",
+      "description": "Array of tags that will trigger this syntax highlighter",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "tokenColors": {
+      "type": "object",
+      "description": "Maps token types to color values",
+      "properties": {
+        "keyword": {
+          "type": "string",
+          "description": "Color for language keywords",
+          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        },
+        "string": {
+          "type": "string",
+          "description": "Color for string literals",
+          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        },
+        "number": {
+          "type": "string",
+          "description": "Color for numeric literals",
+          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        },
+        "comment": {
+          "type": "string",
+          "description": "Color for comments",
+          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        },
+        "function": {
+          "type": "string",
+          "description": "Color for function names",
+          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        },
+        "type": {
+          "type": "string",
+          "description": "Color for type names, classes, interfaces",
+          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        },
+        "variable": {
+          "type": "string",
+          "description": "Color for variable names",
+          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        },
+        "operator": {
+          "type": "string",
+          "description": "Color for operators",
+          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "description": "Rules for matching text patterns to token types",
+      "items": {
+        "type": "object",
+        "required": ["pattern", "token"],
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "Regular expression pattern to match syntax"
+          },
+          "token": {
+            "type": "string",
+            "description": "Token type to apply to matched text",
+            "enum": ["keyword", "string", "number", "comment", "function", "type", "variable", "operator"]
+          }
+        }
+      }
+    }
+  }
+}

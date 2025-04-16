@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/s42yt/thighpads/pkg/config"
 )
@@ -31,4 +32,16 @@ func isFirstRun() bool {
 	configFile := filepath.Join(configPath, "config.json")
 	_, err = os.Stat(configFile)
 	return os.IsNotExist(err)
+}
+
+func toUserFriendlyPath(path string) string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return path
+	}
+	
+	if strings.HasPrefix(path, homeDir) {
+		return "~" + path[len(homeDir):]
+	}
+	return path
 }

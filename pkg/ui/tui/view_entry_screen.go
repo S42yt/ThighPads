@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/textarea"
@@ -48,15 +49,30 @@ func (a *App) updateViewEntryScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a *App) viewViewEntryScreen() string {
-
+	// Create new viewport
 	a.entryViewport = viewport.New(a.width-6, a.height-16)
-	a.entryViewport.SetContent(a.currentEntry.Content)
+
+	// Process content with syntax highlighting if enabled
+	content := a.currentEntry.Content
+	if a.config.SyntaxHighlighting && len(activeSyntaxHighlighters) > 0 {
+		// Split tags
+		tags := strings.Split(a.currentEntry.Tags, ",")
+		for i, tag := range tags {
+			tags[i] = strings.TrimSpace(tag)
+		}
+
+		// Apply syntax highlighting based on entry tags
+		content = ApplyHighlighting(content, tags)
+	}
+
+	// Set the processed content
+	a.entryViewport.SetContent(content)
 
 	title := Title.Copy().Width(a.width - 4).Render(a.currentEntry.Title)
 	tags := Subtitle.Copy().Width(a.width - 4).Render("Tags: " + a.currentEntry.Tags)
 	date := Subtle.Copy().Width(a.width - 4).Render("Created on " + a.currentEntry.CreatedAt.Format("Jan 02, 2006"))
 
-	content := BoxStyle.Width(a.width - 4).Render(a.entryViewport.View())
+	content = BoxStyle.Width(a.width - 4).Render(a.entryViewport.View())
 
 	scrollInfo := ""
 	if a.entryViewport.TotalLineCount() > a.entryViewport.Height {

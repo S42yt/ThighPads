@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/s42yt/thighpads/pkg/models"
 )
@@ -15,6 +16,8 @@ const (
 	DBFileName            = "thighpads.db"
 	ExportFolderName      = "exports"
 	ExportsConfigFileName = "exports_config.json"
+	ThemesFolderName      = "themes"
+	SyntaxFolderName      = "syntax"
 )
 
 type ExportsConfig struct {
@@ -48,6 +51,24 @@ func EnsureConfigFolderExists() (string, error) {
 		}
 	}
 
+	// Ensure themes folder exists
+	themesPath := filepath.Join(configPath, ThemesFolderName)
+	if _, err := os.Stat(themesPath); os.IsNotExist(err) {
+		err = os.MkdirAll(themesPath, 0755)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// Ensure syntax folder exists
+	syntaxPath := filepath.Join(configPath, SyntaxFolderName)
+	if _, err := os.Stat(syntaxPath); os.IsNotExist(err) {
+		err = os.MkdirAll(syntaxPath, 0755)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	return configPath, nil
 }
 
@@ -72,6 +93,18 @@ func LoadConfig() (*models.Config, error) {
 	err = json.Unmarshal(data, &config)
 	if err != nil {
 		return nil, err
+	}
+
+	// Load available themes
+	themes, err := DiscoverThemes()
+	if err == nil {
+		config.AvailableThemes = themes
+	}
+
+	// Load available syntax themes
+	syntaxes, err := DiscoverSyntaxThemes()
+	if err == nil {
+		config.AvailableSyntaxes = syntaxes
 	}
 
 	return &config, nil
@@ -107,6 +140,22 @@ func GetExportPath() (string, error) {
 		return "", err
 	}
 	return filepath.Join(configPath, ExportFolderName), nil
+}
+
+func GetThemesPath() (string, error) {
+	configPath, err := GetConfigPath()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(configPath, ThemesFolderName), nil
+}
+
+func GetSyntaxPath() (string, error) {
+	configPath, err := GetConfigPath()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(configPath, SyntaxFolderName), nil
 }
 
 func IsFirstRun() (bool, error) {
@@ -157,4 +206,205 @@ func GetDesktopExportPath() (string, error) {
 	}
 
 	return desktopExportsDir, nil
+}
+
+// DiscoverThemes finds all available theme files in the themes directory
+func DiscoverThemes() ([]string, error) {
+	themesPath, err := GetThemesPath()
+	if err != nil {
+		return nil, err
+	}
+
+	// Add built-in themes
+	themes := []string{"default", "dark", "light"}
+
+	files, err := os.ReadDir(themesPath)
+	if err != nil {
+		// Return only built-in themes if directory can't be read
+		return themes, nil
+	}
+
+	for _, file := range files {
+		if !file.IsDir() && strings.HasSuffix(file.Name(), ".json") {
+			// Add theme name without .json extension
+			themeName := strings.TrimSuffix(file.Name(), ".json")
+			themes = append(themes, themeName)
+		}
+	}
+
+	return themes, nil
+}
+
+// DiscoverSyntaxThemes finds all available syntax highlighting files
+func DiscoverSyntaxThemes() ([]string, error) {
+	syntaxPath, err := GetSyntaxPath()
+	if err != nil {
+		return nil, err
+	}
+
+	var syntaxes []string
+
+	files, err := os.ReadDir(syntaxPath)
+	if err != nil {
+		return syntaxes, nil
+	}
+
+	for _, file := range files {
+		if !file.IsDir() && strings.HasSuffix(file.Name(), ".json") {
+			// Add syntax name without .json extension
+			syntaxName := strings.TrimSuffix(file.Name(), ".json")
+			syntaxes = append(syntaxes, syntaxName)
+		}
+	}
+
+	return syntaxes, nil
+}
+
+// LoadTheme loads a theme by name from the themes directory
+func LoadTheme(themeName string) (*models.ThemeColors, error) {
+	if themeName == "default" || themeName == "dark" || themeName == "light" {
+		// Return built-in theme
+		return GetBuiltInTheme(themeName), nil
+	}
+
+	themesPath, err := GetThemesPath()
+	if err != nil {
+		return nil, err
+	}
+
+	themeFile := filepath.Join(themesPath, themeName+".json")
+	return models.LoadThemeFromFile(themeFile)
+}
+
+// LoadSyntaxHighlighting loads syntax highlighting rules by name
+func LoadSyntaxHighlighting(syntaxName string) (*models.SyntaxHighlight, error) {
+	syntaxPath, err := GetSyntaxPath()
+	if err != nil {
+		return nil, err
+	}
+
+	syntaxFile := filepath.Join(syntaxPath, syntaxName+".json")
+	return models.LoadSyntaxFromFile(syntaxFile)
+}
+
+// ImportThemeFromFile imports a theme JSON file to the themes directory
+func ImportThemeFromFile(srcPath string) error {
+	themesPath, err := GetThemesPath()
+	if err != nil {
+		return err
+	}
+
+	// Load and validate theme first
+	theme, err := models.LoadThemeFromFile(srcPath)
+	if err != nil {
+		return err
+	}
+
+	// Use theme name as filename if available, otherwise use source filename
+	var destFilename string
+	if theme.Name != "" {
+		destFilename = theme.Name + ".json"
+	} else {
+		destFilename = filepath.Base(srcPath)
+	}
+
+	// Ensure file has .json extension
+	if !strings.HasSuffix(destFilename, ".json") {
+		destFilename += ".json"
+	}
+
+	destPath := filepath.Join(themesPath, destFilename)
+
+	// Copy file to themes directory
+	data, err := os.ReadFile(srcPath)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(destPath, data, 0644)
+}
+
+// ImportSyntaxFromFile imports a syntax highlighting JSON file to the syntax directory
+func ImportSyntaxFromFile(srcPath string) error {
+	syntaxPath, err := GetSyntaxPath()
+	if err != nil {
+		return err
+	}
+
+	// Load and validate syntax first
+	syntax, err := models.LoadSyntaxFromFile(srcPath)
+	if err != nil {
+		return err
+	}
+
+	// Use syntax name as filename if available, otherwise use source filename
+	var destFilename string
+	if syntax.Name != "" {
+		destFilename = syntax.Name + ".json"
+	} else {
+		destFilename = filepath.Base(srcPath)
+	}
+
+	// Ensure file has .json extension
+	if !strings.HasSuffix(destFilename, ".json") {
+		destFilename += ".json"
+	}
+
+	destPath := filepath.Join(syntaxPath, destFilename)
+
+	// Copy file to syntax directory
+	data, err := os.ReadFile(srcPath)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(destPath, data, 0644)
+}
+
+// GetBuiltInTheme returns a built-in theme by name
+func GetBuiltInTheme(name string) *models.ThemeColors {
+	switch name {
+	case "dark":
+		return &models.ThemeColors{
+			Name:       "Dark",
+			Author:     "ThighPads",
+			Version:    "1.0",
+			Accent:     "#7D56F4",
+			Secondary:  "#AE88FF",
+			Text:       "#FFFFFF",
+			Subtle:     "#888888",
+			Error:      "#FF5555",
+			Success:    "#55FF55",
+			Warning:    "#FFAA55",
+			Background: "#121212",
+		}
+	case "light":
+		return &models.ThemeColors{
+			Name:       "Light",
+			Author:     "ThighPads",
+			Version:    "1.0",
+			Accent:     "#7D56F4",
+			Secondary:  "#9D66FF",
+			Text:       "#333333",
+			Subtle:     "#777777",
+			Error:      "#CC0000",
+			Success:    "#00CC00",
+			Warning:    "#CC7700",
+			Background: "#F5F5F5",
+		}
+	default: // default theme
+		return &models.ThemeColors{
+			Name:       "Default",
+			Author:     "ThighPads",
+			Version:    "1.0",
+			Accent:     "#7D56F4",
+			Secondary:  "#AE88FF",
+			Text:       "#FFFFFF",
+			Subtle:     "#888888",
+			Error:      "#FF5555",
+			Success:    "#55FF55",
+			Warning:    "#FFAA55",
+			Background: "#222222",
+		}
+	}
 }
