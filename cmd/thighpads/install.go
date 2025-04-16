@@ -29,8 +29,8 @@ func isInstalledGlobally() bool {
 		homeDir, err := os.UserHomeDir()
 		if err == nil {
 			possibleLocations = append(possibleLocations,
-				filepath.Join(homeDir, "bin", "thighpads"),           
-				filepath.Join(homeDir, ".local", "bin", "thighpads")) 
+				filepath.Join(homeDir, "bin", "thighpads"),
+				filepath.Join(homeDir, ".local", "bin", "thighpads"))
 		}
 
 		for _, location := range possibleLocations {
@@ -164,8 +164,8 @@ func installUnixGlobalSilently() error {
 
 	possibleDirs := []string{
 		"/usr/local/bin",
-		filepath.Join(homeDir, ".local", "bin"), 
-		filepath.Join(homeDir, "bin"),           
+		filepath.Join(homeDir, ".local", "bin"),
+		filepath.Join(homeDir, "bin"),
 	}
 
 	var destDir string
@@ -193,7 +193,7 @@ func installUnixGlobalSilently() error {
 	}
 
 	if destDir == "" {
-		destDir = filepath.Join(homeDir, ".local", "bin") 
+		destDir = filepath.Join(homeDir, ".local", "bin")
 		if err := os.MkdirAll(destDir, 0755); err != nil {
 			return fmt.Errorf("couldn't create installation directory: %w", err)
 		}
@@ -345,8 +345,8 @@ func installUnixGlobal() error {
 			return fmt.Errorf("failed to get home directory: %w", err)
 		}
 
-		binDir := filepath.Join(homeDir, "bin")                
-		localBinDir := filepath.Join(homeDir, ".local", "bin") 
+		binDir := filepath.Join(homeDir, "bin")
+		localBinDir := filepath.Join(homeDir, ".local", "bin")
 
 		path := os.Getenv("PATH")
 		if strings.Contains(path, localBinDir) {
@@ -496,8 +496,8 @@ func uninstallUnixGlobal() error {
 	homeDir, err := os.UserHomeDir()
 	if err == nil {
 		possibleLocations = append(possibleLocations,
-			filepath.Join(homeDir, "bin", "thighpads"),           
-			filepath.Join(homeDir, ".local", "bin", "thighpads")) 
+			filepath.Join(homeDir, "bin", "thighpads"),
+			filepath.Join(homeDir, ".local", "bin", "thighpads"))
 	}
 
 	uninstalled := false

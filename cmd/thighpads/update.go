@@ -122,13 +122,24 @@ func saveLastUpdateCheck() error {
 func updateThighPads(downloadURL string) error {
 	fmt.Println("Downloading update...")
 
-	tempFile, err := os.CreateTemp("", "thighpads_update_*.tmp")
+	tempDir := os.TempDir()
+	if _, err := os.Stat(tempDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(tempDir, 0755); err != nil {
+			return fmt.Errorf("failed to create temp directory: %w", err)
+		}
+	}
+
+	tempFile, err := os.CreateTemp(tempDir, "thighpads_update_*.tmp")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file: %w", err)
 	}
 	defer os.Remove(tempFile.Name())
 
-	resp, err := http.Get(downloadURL)
+	client := &http.Client{
+		Timeout: 60 * time.Second,
+	}
+
+	resp, err := client.Get(downloadURL)
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)
 	}
@@ -138,16 +149,24 @@ func updateThighPads(downloadURL string) error {
 		return fmt.Errorf("download failed with status: %d", resp.StatusCode)
 	}
 
-	_, err = io.Copy(tempFile, resp.Body)
+	fmt.Println("Downloading update... (this may take a moment)")
+
+	written, err := io.Copy(tempFile, resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to save update: %w", err)
 	}
 
+	fmt.Printf("Downloaded %d bytes\n", written)
 	tempFile.Close()
 
 	currentExe, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to get current executable path: %w", err)
+	}
+
+	absCurrentExe, err := filepath.Abs(currentExe)
+	if err == nil {
+		currentExe = absCurrentExe
 	}
 
 	switch runtime.GOOS {
@@ -156,9 +175,16 @@ func updateThighPads(downloadURL string) error {
 		updaterBat := filepath.Join(os.TempDir(), "thighpads_updater.bat")
 		batContent := fmt.Sprintf(
 			`@echo off
-timeout /t 1 /nobreak > NUL
+echo Applying ThighPads update...
+timeout /t 2 /nobreak > NUL
 copy /Y "%s" "%s"
+if errorlevel 1 (
+  echo Failed to update ThighPads. Please try again or update manually.
+  pause
+  exit /b 1
+)
 del "%s"
+echo Update completed successfully!
 start "" "%s"
 exit
 `, tempFile.Name(), currentExe, tempFile.Name(), currentExe)
@@ -167,7 +193,9 @@ exit
 			return fmt.Errorf("failed to create updater script: %w", err)
 		}
 
-		cmd := exec.Command("cmd", "/c", updaterBat)
+		cmd := exec.Command("cmd", "/c", "start", "/b", "cmd", "/c", updaterBat)
+		cmd.Stdout = nil
+		cmd.Stderr = nil
 		if err := cmd.Start(); err != nil {
 			return fmt.Errorf("failed to start updater: %w", err)
 		}
@@ -180,10 +208,16 @@ exit
 		updaterScript := filepath.Join(os.TempDir(), "thighpads_updater.sh")
 		scriptContent := fmt.Sprintf(
 			`#!/bin/bash
-sleep 1
+echo "Applying ThighPads update..."
+sleep 2
 cp -f "%s" "%s"
+if [ $? -ne 0 ]; then
+  echo "Failed to update ThighPads. Please try again or update manually."
+  exit 1
+fi
 chmod +x "%s"
 rm "%s"
+echo "Update completed successfully!"
 exec "%s"
 `, tempFile.Name(), currentExe, currentExe, tempFile.Name(), currentExe)
 
@@ -192,6 +226,8 @@ exec "%s"
 		}
 
 		cmd := exec.Command("/bin/bash", updaterScript)
+		cmd.Stdout = nil
+		cmd.Stderr = nil
 		if err := cmd.Start(); err != nil {
 			return fmt.Errorf("failed to start updater: %w", err)
 		}

@@ -51,7 +51,6 @@ func EnsureConfigFolderExists() (string, error) {
 		}
 	}
 
-	// Ensure themes folder exists
 	themesPath := filepath.Join(configPath, ThemesFolderName)
 	if _, err := os.Stat(themesPath); os.IsNotExist(err) {
 		err = os.MkdirAll(themesPath, 0755)
@@ -60,7 +59,6 @@ func EnsureConfigFolderExists() (string, error) {
 		}
 	}
 
-	// Ensure syntax folder exists
 	syntaxPath := filepath.Join(configPath, SyntaxFolderName)
 	if _, err := os.Stat(syntaxPath); os.IsNotExist(err) {
 		err = os.MkdirAll(syntaxPath, 0755)
@@ -95,13 +93,11 @@ func LoadConfig() (*models.Config, error) {
 		return nil, err
 	}
 
-	// Load available themes
 	themes, err := DiscoverThemes()
 	if err == nil {
 		config.AvailableThemes = themes
 	}
 
-	// Load available syntax themes
 	syntaxes, err := DiscoverSyntaxThemes()
 	if err == nil {
 		config.AvailableSyntaxes = syntaxes
@@ -208,25 +204,23 @@ func GetDesktopExportPath() (string, error) {
 	return desktopExportsDir, nil
 }
 
-// DiscoverThemes finds all available theme files in the themes directory
 func DiscoverThemes() ([]string, error) {
 	themesPath, err := GetThemesPath()
 	if err != nil {
 		return nil, err
 	}
 
-	// Add built-in themes
 	themes := []string{"default", "dark", "light"}
 
 	files, err := os.ReadDir(themesPath)
 	if err != nil {
-		// Return only built-in themes if directory can't be read
+
 		return themes, nil
 	}
 
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".json") {
-			// Add theme name without .json extension
+
 			themeName := strings.TrimSuffix(file.Name(), ".json")
 			themes = append(themes, themeName)
 		}
@@ -235,7 +229,6 @@ func DiscoverThemes() ([]string, error) {
 	return themes, nil
 }
 
-// DiscoverSyntaxThemes finds all available syntax highlighting files
 func DiscoverSyntaxThemes() ([]string, error) {
 	syntaxPath, err := GetSyntaxPath()
 	if err != nil {
@@ -251,7 +244,7 @@ func DiscoverSyntaxThemes() ([]string, error) {
 
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".json") {
-			// Add syntax name without .json extension
+
 			syntaxName := strings.TrimSuffix(file.Name(), ".json")
 			syntaxes = append(syntaxes, syntaxName)
 		}
@@ -260,10 +253,9 @@ func DiscoverSyntaxThemes() ([]string, error) {
 	return syntaxes, nil
 }
 
-// LoadTheme loads a theme by name from the themes directory
 func LoadTheme(themeName string) (*models.ThemeColors, error) {
 	if themeName == "default" || themeName == "dark" || themeName == "light" {
-		// Return built-in theme
+
 		return GetBuiltInTheme(themeName), nil
 	}
 
@@ -276,7 +268,6 @@ func LoadTheme(themeName string) (*models.ThemeColors, error) {
 	return models.LoadThemeFromFile(themeFile)
 }
 
-// LoadSyntaxHighlighting loads syntax highlighting rules by name
 func LoadSyntaxHighlighting(syntaxName string) (*models.SyntaxHighlight, error) {
 	syntaxPath, err := GetSyntaxPath()
 	if err != nil {
@@ -287,20 +278,17 @@ func LoadSyntaxHighlighting(syntaxName string) (*models.SyntaxHighlight, error) 
 	return models.LoadSyntaxFromFile(syntaxFile)
 }
 
-// ImportThemeFromFile imports a theme JSON file to the themes directory
 func ImportThemeFromFile(srcPath string) error {
 	themesPath, err := GetThemesPath()
 	if err != nil {
 		return err
 	}
 
-	// Load and validate theme first
 	theme, err := models.LoadThemeFromFile(srcPath)
 	if err != nil {
 		return err
 	}
 
-	// Use theme name as filename if available, otherwise use source filename
 	var destFilename string
 	if theme.Name != "" {
 		destFilename = theme.Name + ".json"
@@ -308,14 +296,12 @@ func ImportThemeFromFile(srcPath string) error {
 		destFilename = filepath.Base(srcPath)
 	}
 
-	// Ensure file has .json extension
 	if !strings.HasSuffix(destFilename, ".json") {
 		destFilename += ".json"
 	}
 
 	destPath := filepath.Join(themesPath, destFilename)
 
-	// Copy file to themes directory
 	data, err := os.ReadFile(srcPath)
 	if err != nil {
 		return err
@@ -324,20 +310,17 @@ func ImportThemeFromFile(srcPath string) error {
 	return os.WriteFile(destPath, data, 0644)
 }
 
-// ImportSyntaxFromFile imports a syntax highlighting JSON file to the syntax directory
 func ImportSyntaxFromFile(srcPath string) error {
 	syntaxPath, err := GetSyntaxPath()
 	if err != nil {
 		return err
 	}
 
-	// Load and validate syntax first
 	syntax, err := models.LoadSyntaxFromFile(srcPath)
 	if err != nil {
 		return err
 	}
 
-	// Use syntax name as filename if available, otherwise use source filename
 	var destFilename string
 	if syntax.Name != "" {
 		destFilename = syntax.Name + ".json"
@@ -345,14 +328,12 @@ func ImportSyntaxFromFile(srcPath string) error {
 		destFilename = filepath.Base(srcPath)
 	}
 
-	// Ensure file has .json extension
 	if !strings.HasSuffix(destFilename, ".json") {
 		destFilename += ".json"
 	}
 
 	destPath := filepath.Join(syntaxPath, destFilename)
 
-	// Copy file to syntax directory
 	data, err := os.ReadFile(srcPath)
 	if err != nil {
 		return err
@@ -361,7 +342,6 @@ func ImportSyntaxFromFile(srcPath string) error {
 	return os.WriteFile(destPath, data, 0644)
 }
 
-// GetBuiltInTheme returns a built-in theme by name
 func GetBuiltInTheme(name string) *models.ThemeColors {
 	switch name {
 	case "dark":
@@ -392,7 +372,7 @@ func GetBuiltInTheme(name string) *models.ThemeColors {
 			Warning:    "#CC7700",
 			Background: "#F5F5F5",
 		}
-	default: // default theme
+	default:
 		return &models.ThemeColors{
 			Name:       "Default",
 			Author:     "ThighPads",
@@ -407,4 +387,21 @@ func GetBuiltInTheme(name string) *models.ThemeColors {
 			Background: "#222222",
 		}
 	}
+}
+
+func NormalizePath(path string) string {
+
+	if strings.HasPrefix(path, "~") {
+		homeDir, err := os.UserHomeDir()
+		if err == nil {
+			path = filepath.Join(homeDir, path[1:])
+		}
+	}
+
+	absPath, err := filepath.Abs(path)
+	if err == nil {
+		path = absPath
+	}
+
+	return filepath.Clean(path)
 }

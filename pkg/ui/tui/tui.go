@@ -91,12 +91,31 @@ func Initialize() (*tea.Program, error) {
 
 	if isFirstRun {
 		initialScreen = SetupScreen
-		cfg = &models.Config{Username: ""}
+
+		cfg = &models.Config{
+			Username:            "",
+			Theme:               "default",
+			AutoCheckUpdate:     true,
+			DefaultExport:       "config",
+			SyntaxHighlighting:  true,
+			EnabledSyntaxThemes: []string{},
+			AvailableThemes:     []string{"default", "dark", "light"},
+			AvailableSyntaxes:   []string{},
+			TagSyntaxMap:        make(map[string]string),
+		}
 	} else {
 		initialScreen = HomeScreen
 		cfg, err = config.LoadConfig()
 		if err != nil {
 			return nil, err
+		}
+
+		if cfg.TagSyntaxMap == nil {
+			cfg.TagSyntaxMap = make(map[string]string)
+		}
+
+		if cfg.EnabledSyntaxThemes == nil {
+			cfg.EnabledSyntaxThemes = []string{}
 		}
 	}
 
@@ -112,24 +131,23 @@ func Initialize() (*tea.Program, error) {
 		app.usernameInput = TextInputField("Enter your username")
 	} else {
 		app.loadTables()
-		
+
 		if app.config.Theme != "" {
 			theme, err := config.LoadTheme(app.config.Theme)
 			if err == nil {
 				ApplyCustomTheme(theme)
 			}
 		}
-		
+
 		app.loadSyntaxHighlighters()
 	}
 
-	
 	app.filePathInput = TextInputField("Enter file path")
+	app.exportName = TextInputField("Enter export filename")
 
 	p := tea.NewProgram(app, tea.WithAltScreen())
 	return p, nil
 }
-
 
 func (a *App) loadSyntaxHighlighters() {
 	if !a.config.SyntaxHighlighting {
@@ -138,7 +156,6 @@ func (a *App) loadSyntaxHighlighters() {
 
 	ClearSyntaxHighlighters()
 
-	
 	for _, name := range a.config.EnabledSyntaxThemes {
 		syntax, err := config.LoadSyntaxHighlighting(name)
 		if err != nil {
@@ -346,27 +363,20 @@ func (a *App) View() string {
 
 	contentView := view
 
-	if a.showFullHelp {
-
-		helpHeight := a.height / 2
-		if helpHeight > 20 {
-			helpHeight = 20
+	if a.showFullHelp && (!inTextInput || (inTextInput && a.showFullHelp)) {
+		helpHeight := a.height / 3
+		if helpHeight > 15 {
+			helpHeight = 15
 		}
-
-		inTextInput := (a.screen == NewEntryScreen || a.screen == EditEntryScreen ||
-			a.screen == ImportScreen || a.screen == SetupScreen || a.screen == NewTableScreen)
 
 		helpView := FullHelpView(toolbarKeys, a.width, helpHeight, inTextInput)
 		contentView = contentView + "\n\n" + helpView
 	}
 
-	if !a.showFullHelp {
-
-	} else {
-
+	help := ""
+	if !inTextInput || !a.entryContent.Focused() {
+		help = FixedToolbarView(toolbarKeys, a.width)
 	}
-
-	help := FixedToolbarView(toolbarKeys, a.width)
 
 	return AppStyle.Render(contentView + statusView + "\n" + help)
 }

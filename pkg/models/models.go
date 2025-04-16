@@ -23,7 +23,6 @@ type Entry struct {
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
 
-
 type ThemeColors struct {
 	Name       string `json:"name"`
 	Author     string `json:"author"`
@@ -38,7 +37,6 @@ type ThemeColors struct {
 	Background string `json:"background"`
 }
 
-
 type SyntaxHighlight struct {
 	Name        string              `json:"name"`
 	Author      string              `json:"author"`
@@ -49,12 +47,10 @@ type SyntaxHighlight struct {
 	Rules       []SyntaxRulePattern `json:"rules"`
 }
 
-
 type SyntaxRulePattern struct {
 	Pattern string `json:"pattern"`
 	Token   string `json:"token"`
 }
-
 
 func LoadThemeFromFile(filePath string) (*ThemeColors, error) {
 	data, err := os.ReadFile(filePath)
@@ -70,7 +66,6 @@ func LoadThemeFromFile(filePath string) (*ThemeColors, error) {
 	return &theme, nil
 }
 
-
 func LoadSyntaxFromFile(filePath string) (*SyntaxHighlight, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -84,7 +79,6 @@ func LoadSyntaxFromFile(filePath string) (*SyntaxHighlight, error) {
 
 	return &syntax, nil
 }
-
 
 type Config struct {
 	Username            string            `json:"username"`

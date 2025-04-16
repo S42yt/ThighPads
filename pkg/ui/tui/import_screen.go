@@ -17,14 +17,27 @@ func (a *App) updateImportScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyEnter:
 			if a.importPathInput.Value() != "" {
-				path := a.importPathInput.Value()
+
+				rawPath := a.importPathInput.Value()
+				path := (rawPath)
 
 				if _, err := os.Stat(path); os.IsNotExist(err) {
-					a.errorMsg = "File does not exist"
-					return a, nil
+
+					if !strings.HasSuffix(strings.ToLower(path), strings.ToLower(data.FileExtension)) {
+						pathWithExt := path + data.FileExtension
+						if _, err := os.Stat(pathWithExt); err == nil {
+							path = pathWithExt
+						} else {
+							a.errorMsg = fmt.Sprintf("File does not exist: %s", (path))
+							return a, nil
+						}
+					} else {
+						a.errorMsg = fmt.Sprintf("File does not exist: %s", (path))
+						return a, nil
+					}
 				}
 
-				if !strings.HasSuffix(path, data.FileExtension) {
+				if !strings.HasSuffix(strings.ToLower(path), strings.ToLower(data.FileExtension)) {
 					a.errorMsg = "File must have " + data.FileExtension + " extension"
 					return a, nil
 				}
@@ -53,11 +66,14 @@ func (a *App) updateImportScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a *App) viewImportScreen() string {
-	title := Title.Render("Import Table")
+	title := Title.Copy().Width(a.width - 4).Render("Import Table")
 
-	importInput := BoxStyle.Render(
-		fmt.Sprintf("%s\n\n%s",
+	importHelp := Subtle.Render("Examples: ~/Documents/my_table.thighpad, C:\\Users\\files\\table.thighpad")
+
+	importInput := BoxStyle.Copy().Width(a.width - 6).Render(
+		fmt.Sprintf("%s\n%s\n\n%s",
 			Normal.Render("Enter path to .thighpad file:"),
+			importHelp,
 			a.importPathInput.View(),
 		),
 	)

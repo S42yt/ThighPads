@@ -16,13 +16,13 @@ func (a *App) updateSettingsScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "1": 
+		case "1":
 			a.settingsSubScreen = "theme_selector"
 			return a, nil
-		case "2": 
+		case "2":
 			a.config.AutoCheckUpdate = !a.config.AutoCheckUpdate
 			return a, nil
-		case "3": 
+		case "3":
 			switch a.config.DefaultExport {
 			case "config":
 				a.config.DefaultExport = "desktop"
@@ -32,23 +32,23 @@ func (a *App) updateSettingsScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.config.DefaultExport = "config"
 			}
 			return a, nil
-		case "4": 
+		case "4":
 			a.settingsSubScreen = "import_theme"
 			a.filePathInput.SetValue("")
 			a.filePathInput.Focus()
 			return a, nil
-		case "5": 
+		case "5":
 			a.settingsSubScreen = "import_syntax"
 			a.filePathInput.SetValue("")
 			a.filePathInput.Focus()
 			return a, nil
-		case "6": 
+		case "6":
 			a.config.SyntaxHighlighting = !a.config.SyntaxHighlighting
 			return a, nil
-		case "7": 
+		case "7":
 			a.settingsSubScreen = "syntax_manager"
 			return a, nil
-		case "s": 
+		case "s":
 			err := config.SaveConfig(a.config)
 			if err != nil {
 				a.errorMsg = err.Error()
@@ -69,7 +69,6 @@ func (a *App) updateSettingsScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	
 	switch a.settingsSubScreen {
 	case "theme_selector":
 		return a.handleThemeSelector(msg)
@@ -81,7 +80,6 @@ func (a *App) updateSettingsScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a.handleSyntaxManager(msg)
 	}
 
-	
 	if a.filePathInput.Focused() {
 		a.filePathInput, cmd = a.filePathInput.Update(msg)
 		return a, cmd
@@ -98,13 +96,11 @@ func (a *App) handleThemeSelector(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, nil
 		}
 
-
 		if msg.Type == tea.KeyRunes && len(msg.Runes) > 0 {
 			numKey := msg.Runes[0] - '0'
 			if numKey >= 1 && int(numKey) <= len(a.config.AvailableThemes) {
 				a.config.Theme = a.config.AvailableThemes[numKey-1]
 
-				
 				theme, err := config.LoadTheme(a.config.Theme)
 				if err == nil {
 					ApplyCustomTheme(theme)
@@ -127,11 +123,14 @@ func (a *App) handleImportTheme(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyEnter:
 			if a.filePathInput.Value() != "" {
-				err := config.ImportThemeFromFile(a.filePathInput.Value())
+				// Convert user-friendly path (with possible ~ for home directory) to system path
+				path := config.NormalizePath(a.filePathInput.Value())
+
+				err := config.ImportThemeFromFile(path)
 				if err != nil {
 					a.errorMsg = "Failed to import theme: " + err.Error()
 				} else {
-					
+					// Refresh available themes
 					themes, _ := config.DiscoverThemes()
 					a.config.AvailableThemes = themes
 					a.settingsSubScreen = ""
@@ -157,11 +156,14 @@ func (a *App) handleImportSyntax(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyEnter:
 			if a.filePathInput.Value() != "" {
-				err := config.ImportSyntaxFromFile(a.filePathInput.Value())
+				// Convert user-friendly path (with possible ~ for home directory) to system path
+				path := config.NormalizePath(a.filePathInput.Value())
+
+				err := config.ImportSyntaxFromFile(path)
 				if err != nil {
 					a.errorMsg = "Failed to import syntax: " + err.Error()
 				} else {
-					
+					// Refresh available syntax themes
 					syntaxes, _ := config.DiscoverSyntaxThemes()
 					a.config.AvailableSyntaxes = syntaxes
 					a.settingsSubScreen = ""
@@ -187,40 +189,60 @@ func (a *App) handleSyntaxManager(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, nil
 		}
 
-		
 		if msg.Type == tea.KeyRunes {
-			numKey := msg.Runes[0] - '0' 
+			numKey := msg.Runes[0] - '0'
 			if numKey >= 1 && int(numKey) <= len(a.config.AvailableSyntaxes) {
 				syntaxName := a.config.AvailableSyntaxes[numKey-1]
 
-				
+				// Initialize maps if they don't exist
+				if a.config.EnabledSyntaxThemes == nil {
+					a.config.EnabledSyntaxThemes = []string{}
+				}
+
+				if a.config.TagSyntaxMap == nil {
+					a.config.TagSyntaxMap = make(map[string]string)
+				}
+
+				// Check if this syntax is already enabled
 				found := false
 				for i, name := range a.config.EnabledSyntaxThemes {
 					if name == syntaxName {
-						
+						// Remove from enabled syntaxes
 						a.config.EnabledSyntaxThemes = append(
 							a.config.EnabledSyntaxThemes[:i],
 							a.config.EnabledSyntaxThemes[i+1:]...,
 						)
+
+						// Clean up the tag map
+						for tag, syntax := range a.config.TagSyntaxMap {
+							if syntax == syntaxName {
+								delete(a.config.TagSyntaxMap, tag)
+							}
+						}
+
 						found = true
 						break
 					}
 				}
 
 				if !found {
-					
+					// Add to enabled syntaxes
 					a.config.EnabledSyntaxThemes = append(a.config.EnabledSyntaxThemes, syntaxName)
 
-					
-					syntaxPath, _ := config.GetSyntaxPath()
-					syntax, err := models.LoadSyntaxFromFile(filepath.Join(syntaxPath, syntaxName+".json"))
+					// Load syntax and update tag map
+					syntaxPath, err := config.GetSyntaxPath()
 					if err == nil {
-						
-						for _, tag := range syntax.Tags {
-							a.config.TagSyntaxMap[strings.ToLower(tag)] = syntaxName
+						syntax, err := models.LoadSyntaxFromFile(filepath.Join(syntaxPath, syntaxName+".json"))
+						if err == nil {
+							for _, tag := range syntax.Tags {
+								a.config.TagSyntaxMap[strings.ToLower(tag)] = syntaxName
+							}
 						}
 					}
 				}
+
+				// Reload syntax highlighters to apply changes
+				a.loadSyntaxHighlighters()
 
 				return a, nil
 			}
@@ -387,7 +409,6 @@ func (a *App) viewSyntaxManager() string {
 		footer,
 	)
 }
-
 
 func contains(slice []string, item string) bool {
 	for _, s := range slice {

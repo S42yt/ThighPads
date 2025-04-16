@@ -71,18 +71,32 @@ func (a *App) updateNewEntryScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a *App) viewNewEntryScreen() string {
-	title := Title.Render("New Entry")
-	subtitle := Subtitle.Render(a.currentTable.Name)
+	title := Title.Copy().Width(a.width - 4).Render("New Entry")
+	subtitle := Subtitle.Copy().Width(a.width - 4).Render(a.currentTable.Name)
+
+	availWidth := a.width - 6
 
 	titleInput := Subtitle.Render("Title:") + "\n" + a.entryTitleInput.View()
 	tagsInput := Subtitle.Render("Tags:") + "\n" + a.entryTagsInput.View()
+
+	// Add focus indicator to show which field is currently active
+	focusIndicator := ""
+	if a.entryTitleInput.Focused() {
+		focusIndicator = Subtitle.Foreground(accentColor).Render("Editing title...")
+	} else if a.entryTagsInput.Focused() {
+		focusIndicator = Subtitle.Foreground(accentColor).Render("Editing tags...")
+	} else if a.entryContent.Focused() {
+		focusIndicator = Subtitle.Foreground(accentColor).Render("Editing content... (Use Tab to switch fields, Ctrl+S to save)")
+	}
+
 	content := Subtitle.Render("Content:") + "\n" + a.entryContent.View()
 
-	form := BoxStyle.Render(
-		fmt.Sprintf("%s\n\n%s\n\n%s",
+	form := BoxStyle.Copy().Width(availWidth).Render(
+		fmt.Sprintf("%s\n\n%s\n\n%s\n%s",
 			titleInput,
 			tagsInput,
 			content,
+			focusIndicator,
 		),
 	)
 

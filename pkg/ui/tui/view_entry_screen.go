@@ -41,55 +41,99 @@ func (a *App) updateViewEntryScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, nil
 		case "q", "ctrl+c", "esc":
 			return a, tea.Quit
+		case "home", "g":
+			a.entryViewport.GotoTop()
+			return a, nil
+		case "end", "G":
+			a.entryViewport.GotoBottom()
+			return a, nil
+		case "pageup":
+			a.entryViewport.HalfViewUp()
+			return a, nil
+		case "pagedown":
+			a.entryViewport.HalfViewDown()
+			return a, nil
 		}
 	}
 
+	// Handle mouse wheel events
 	a.entryViewport, cmd = a.entryViewport.Update(msg)
 	return a, cmd
 }
 
 func (a *App) viewViewEntryScreen() string {
-	// Create new viewport
-	a.entryViewport = viewport.New(a.width-6, a.height-16)
+	// Create new viewport with appropriate dimensions
+	viewportHeight := a.height - 16
+	if viewportHeight < 5 {
+		viewportHeight = 5 // Minimum reasonable height
+	}
+
+	a.entryViewport = viewport.New(a.width-6, viewportHeight)
+	a.entryViewport.Style = BoxStyle
 
 	// Process content with syntax highlighting if enabled
 	content := a.currentEntry.Content
-	if a.config.SyntaxHighlighting && len(activeSyntaxHighlighters) > 0 {
-		// Split tags
-		tags := strings.Split(a.currentEntry.Tags, ",")
-		for i, tag := range tags {
-			tags[i] = strings.TrimSpace(tag)
+	if a.config.SyntaxHighlighting && len(a.config.EnabledSyntaxThemes) > 0 {
+		// Split tags and clean them
+		tags := []string{}
+		if a.currentEntry.Tags != "" {
+			for _, tag := range strings.Split(a.currentEntry.Tags, ",") {
+				cleanTag := strings.ToLower(strings.TrimSpace(tag))
+				if cleanTag != "" {
+					tags = append(tags, cleanTag)
+				}
+			}
 		}
 
 		// Apply syntax highlighting based on entry tags
-		content = ApplyHighlighting(content, tags)
+		if len(tags) > 0 {
+			content = ApplyHighlighting(content, tags)
+		}
 	}
 
 	// Set the processed content
 	a.entryViewport.SetContent(content)
 
 	title := Title.Copy().Width(a.width - 4).Render(a.currentEntry.Title)
-	tags := Subtitle.Copy().Width(a.width - 4).Render("Tags: " + a.currentEntry.Tags)
-	date := Subtle.Copy().Width(a.width - 4).Render("Created on " + a.currentEntry.CreatedAt.Format("Jan 02, 2006"))
 
-	content = BoxStyle.Width(a.width - 4).Render(a.entryViewport.View())
+	// Format tags for display
+	tagDisplay := "Tags: "
+	if a.currentEntry.Tags != "" {
+		tagDisplay += a.currentEntry.Tags
+	} else {
+		tagDisplay += "(none)"
+	}
 
+	tags := Subtitle.Copy().Width(a.width - 4).Render(tagDisplay)
+	date := Subtle.Copy().Width(a.width - 4).Render(
+		"Created on " + a.currentEntry.CreatedAt.Format("Jan 02, 2006"))
+
+	// Content with border
+	contentView := a.entryViewport.View()
+
+	// Show scroll indicators when needed
 	scrollInfo := ""
 	if a.entryViewport.TotalLineCount() > a.entryViewport.Height {
 		scrollPercent := 0
 		if a.entryViewport.TotalLineCount()-a.entryViewport.Height > 0 {
-			scrollPercent = int(float64(a.entryViewport.YOffset) / float64(a.entryViewport.TotalLineCount()-a.entryViewport.Height) * 100)
+			scrollPercent = int(float64(a.entryViewport.YOffset) /
+				float64(a.entryViewport.TotalLineCount()-a.entryViewport.Height) * 100)
 		}
-		scrollInfo = Subtle.Render(fmt.Sprintf("Scroll: %d%% (%d of %d lines)",
+
+		// Add line numbers for reference
+		scrollInfo = Subtle.Render(fmt.Sprintf("Scroll: %d%% (Line %d of %d lines)",
 			scrollPercent, a.entryViewport.YOffset+1, a.entryViewport.TotalLineCount()))
 	}
 
+	navigationTips := Normal.Render("▲/▼: Scroll  PgUp/PgDn: Page up/down  g/G: Top/Bottom")
+
 	return fmt.Sprintf(
-		"%s\n%s\n%s\n\n%s\n%s",
+		"%s\n%s\n%s\n\n%s\n\n%s\n%s",
 		title,
 		tags,
 		date,
-		content,
+		contentView,
 		scrollInfo,
+		navigationTips,
 	)
 }

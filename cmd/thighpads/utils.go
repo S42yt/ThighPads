@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/s42yt/thighpads/pkg/config"
@@ -39,9 +40,41 @@ func toUserFriendlyPath(path string) string {
 	if err != nil {
 		return path
 	}
-	
-	if strings.HasPrefix(path, homeDir) {
-		return "~" + path[len(homeDir):]
+
+	normalizedPath := filepath.ToSlash(path)
+	normalizedHome := filepath.ToSlash(homeDir)
+
+	if strings.HasPrefix(normalizedPath, normalizedHome) {
+		return "~" + normalizedPath[len(normalizedHome):]
+	}
+
+	return normalizedPath
+}
+
+func fromUserFriendlyPath(path string) string {
+
+	if strings.HasPrefix(path, "~") {
+		homeDir, err := os.UserHomeDir()
+		if err == nil {
+			path = filepath.Join(homeDir, path[1:])
+		}
+	}
+
+	absPath, err := filepath.Abs(path)
+	if err == nil {
+		path = absPath
+	}
+
+	if runtime.GOOS == "windows" {
+		return filepath.FromSlash(path)
+	}
+
+	return path
+}
+
+func ensureExtension(path, ext string) string {
+	if !strings.HasSuffix(strings.ToLower(path), strings.ToLower(ext)) {
+		return path + ext
 	}
 	return path
 }
